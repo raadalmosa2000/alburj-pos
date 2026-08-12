@@ -11,7 +11,7 @@ document.addEventListener("DOMContentLoaded", function () {
         text === "＋بيع" ||
         text.indexOf("المبيعات") !== -1
       ) {
-        showSales();
+        showSalesHistory();
       }
 
       else if (text.indexOf("منتج جديد") !== -1) {
