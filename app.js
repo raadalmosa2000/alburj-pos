@@ -9364,4 +9364,1525 @@ function bindProductActions() {
 
     });
 }
+/* =========================================
+   قسم الزبائن
+========================================= */
+
+function showCustomers() {
+  const app = getApp();
+
+  if (!app) return;
+
+  const customers = getCustomers();
+
+  const totalCustomers = customers.length;
+
+  const totalDebts =
+    getTotalDebts();
+
+  const totalPurchases =
+    customers.reduce(
+      (sum, customer) =>
+        sum + getCustomerPurchases(customer.id),
+      0
+    );
+
+  app.innerHTML = `
+    <div class="page">
+
+      <div class="page-header">
+
+        <button
+          class="back-button"
+          id="backCustomers"
+        >
+          ←
+        </button>
+
+        <div>
+          <h1>الزبائن</h1>
+        </div>
+
+      </div>
+
+      <section class="stats">
+
+        <div class="stat">
+          <span>عدد الزبائن</span>
+          <strong>
+            ${totalCustomers}
+          </strong>
+          <small>زبون</small>
+        </div>
+
+        <div class="stat">
+          <span>مشترياتهم</span>
+          <strong>
+            ${money(totalPurchases)}
+          </strong>
+          <small>ل.س</small>
+        </div>
+
+        <div class="stat">
+          <span>الديون</span>
+          <strong>
+            ${money(totalDebts)}
+          </strong>
+          <small>متبقي</small>
+        </div>
+
+      </section>
+
+      <section class="section">
+
+        <div class="section-heading">
+
+          <h3>
+            إدارة الزبائن
+          </h3>
+
+          <button
+            class="primary-button"
+            id="addCustomerButton"
+            style="
+              min-height:42px;
+              padding:8px 14px;
+            "
+          >
+            ＋ زبون جديد
+          </button>
+
+        </div>
+
+        <div class="form-card">
+
+          <input
+            id="customerSearch"
+            class="search-input"
+            type="search"
+            placeholder="🔎 ابحث باسم الزبون أو الهاتف..."
+          >
+
+        </div>
+
+      </section>
+
+      <section class="section">
+
+        <div
+          id="customersList"
+          class="activity-list"
+        >
+
+          ${renderCustomers(
+            customers
+          )}
+
+        </div>
+
+      </section>
+
+    </div>
+
+    ${createBottomNavigation("more")}
+  `;
+
+  document
+    .getElementById("backCustomers")
+    ?.addEventListener(
+      "click",
+      showDashboard
+    );
+
+  document
+    .getElementById("addCustomerButton")
+    ?.addEventListener(
+      "click",
+      () => showCustomerForm()
+    );
+
+  document
+    .getElementById("customerSearch")
+    ?.addEventListener(
+      "input",
+      searchCustomers
+    );
+
+  bindCustomerActions();
+
+  setupNavigation();
+}
+
+
+/* =========================================
+   إجمالي مشتريات الزبون
+========================================= */
+
+function getCustomerPurchases(
+  customerId
+) {
+
+  return getSales()
+    .filter(
+      sale =>
+        String(sale.customerId) ===
+        String(customerId)
+    )
+    .reduce(
+      (sum, sale) =>
+        sum + number(sale.total),
+      0
+    );
+}
+
+
+/* =========================================
+   عدد مشتريات الزبون
+========================================= */
+
+function getCustomerInvoiceCount(
+  customerId
+) {
+
+  return getSales()
+    .filter(
+      sale =>
+        String(sale.customerId) ===
+        String(customerId)
+    ).length;
+}
+
+
+/* =========================================
+   مشتريات هذا الشهر
+========================================= */
+
+function getCustomerMonthlyPurchases(
+  customerId
+) {
+
+  const now = new Date();
+
+  return getSales()
+    .filter(sale => {
+
+      if (
+        String(sale.customerId) !==
+        String(customerId)
+      ) {
+        return false;
+      }
+
+      const date =
+        new Date(sale.createdAt);
+
+      return (
+        date.getFullYear() ===
+          now.getFullYear() &&
+        date.getMonth() ===
+          now.getMonth()
+      );
+    })
+    .reduce(
+      (sum, sale) =>
+        sum + number(sale.total),
+      0
+    );
+}
+
+
+/* =========================================
+   عرض الزبائن
+========================================= */
+
+function renderCustomers(
+  customers
+) {
+
+  if (!customers.length) {
+
+    return `
+      <div class="empty-state">
+
+        <span>♙</span>
+
+        <strong>
+          لا يوجد زبائن
+        </strong>
+
+        <small>
+          أضف أول زبون إلى النظام.
+        </small>
+
+      </div>
+    `;
+  }
+
+  return customers
+    .map(customer => {
+
+      const debt =
+        getCustomerDebt(
+          customer.id
+        );
+
+      const purchases =
+        getCustomerPurchases(
+          customer.id
+        );
+
+      const monthly =
+        getCustomerMonthlyPurchases(
+          customer.id
+        );
+
+      const invoices =
+        getCustomerInvoiceCount(
+          customer.id
+        );
+
+      return `
+        <div
+          class="customer-card"
+          data-customer-card="${customer.id}"
+        >
+
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              gap:12px;
+              align-items:flex-start;
+            "
+          >
+
+            <div class="customer-info">
+
+              <strong class="customer-name">
+                ${escapeHtml(
+                  customer.name
+                )}
+              </strong>
+
+              ${
+                customer.phone
+                  ? `
+                    <small>
+                      ☎
+                      ${escapeHtml(
+                        customer.phone
+                      )}
+                    </small>
+                  `
+                  : ""
+              }
+
+              ${
+                customer.notes
+                  ? `
+                    <small>
+                      ${escapeHtml(
+                        customer.notes
+                      )}
+                    </small>
+                  `
+                  : ""
+              }
+
+            </div>
+
+            <div
+              style="
+                text-align:left;
+              "
+            >
+
+              <strong
+                class="${
+                  debt.remaining > 0
+                    ? "remaining-amount"
+                    : "paid-amount"
+                }"
+                style="
+                  display:block;
+                  font-size:18px;
+                "
+              >
+                ${money(
+                  debt.remaining
+                )}
+              </strong>
+
+              <small>
+                ${
+                  debt.remaining > 0
+                    ? "المتبقي"
+                    : "لا يوجد عليه دين"
+                }
+              </small>
+
+            </div>
+
+          </div>
+
+
+          <div
+            class="customer-stats"
+            style="
+              margin-top:15px;
+              display:grid;
+              grid-template-columns:
+                repeat(3,1fr);
+              gap:8px;
+            "
+          >
+
+            <div class="mini-stat">
+              <small>المشتريات</small>
+              <strong>
+                ${money(purchases)}
+              </strong>
+            </div>
+
+            <div class="mini-stat">
+              <small>هذا الشهر</small>
+              <strong>
+                ${money(monthly)}
+              </strong>
+            </div>
+
+            <div class="mini-stat">
+              <small>الفواتير</small>
+              <strong>
+                ${invoices}
+              </strong>
+            </div>
+
+          </div>
+
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:
+                repeat(3,1fr);
+              gap:7px;
+              margin-top:12px;
+            "
+          >
+
+            <button
+              class="primary-button"
+              data-customer-profile="${customer.id}"
+              style="
+                min-height:40px;
+                padding:7px;
+              "
+            >
+              الملف
+            </button>
+
+            <button
+              class="secondary-button"
+              data-customer-edit="${customer.id}"
+              style="
+                min-height:40px;
+                padding:7px;
+              "
+            >
+              ✎ تعديل
+            </button>
+
+            <button
+              class="danger-button"
+              data-customer-delete="${customer.id}"
+              style="
+                min-height:40px;
+                padding:7px;
+              "
+            >
+              حذف
+            </button>
+
+          </div>
+
+        </div>
+      `;
+    })
+    .join("");
+}
+
+
+/* =========================================
+   نموذج الزبون
+========================================= */
+
+function showCustomerForm(
+  customerId = null
+) {
+
+  const app = getApp();
+
+  if (!app) return;
+
+  const customers =
+    getCustomers();
+
+  const customer =
+    customerId !== null
+      ? customers.find(
+          item =>
+            String(item.id) ===
+            String(customerId)
+        )
+      : null;
+
+  const editing =
+    Boolean(customer);
+
+  app.innerHTML = `
+    <div class="page">
+
+      <div class="page-header">
+
+        <button
+          class="back-button"
+          id="backCustomerForm"
+        >
+          ←
+        </button>
+
+        <div>
+          <h1>
+            ${
+              editing
+                ? "تعديل الزبون"
+                : "إضافة زبون"
+            }
+          </h1>
+        </div>
+
+      </div>
+
+
+      <section class="form-card">
+
+        <form id="customerForm">
+
+          <div class="form-grid">
+
+            <div class="form-group full">
+
+              <label>
+                اسم الزبون
+              </label>
+
+              <input
+                id="customerName"
+                class="form-input"
+                type="text"
+                required
+                value="${
+                  editing
+                    ? escapeHtml(
+                        customer.name
+                      )
+                    : ""
+                }"
+                placeholder="مثال: أحمد محمد"
+              >
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>
+                رقم الهاتف
+              </label>
+
+              <input
+                id="customerPhone"
+                class="form-input"
+                type="tel"
+                value="${
+                  editing
+                    ? escapeHtml(
+                        customer.phone || ""
+                      )
+                    : ""
+                }"
+                placeholder="09xxxxxxxx"
+              >
+
+            </div>
+
+
+            <div class="form-group">
+
+              <label>
+                ملاحظات
+              </label>
+
+              <input
+                id="customerNotes"
+                class="form-input"
+                type="text"
+                value="${
+                  editing
+                    ? escapeHtml(
+                        customer.notes || ""
+                      )
+                    : ""
+                }"
+                placeholder="ملاحظات اختيارية"
+              >
+
+            </div>
+
+          </div>
+
+
+          <div
+            style="
+              display:grid;
+              gap:10px;
+              margin-top:18px;
+            "
+          >
+
+            <button
+              class="primary-button"
+              type="submit"
+            >
+              ${
+                editing
+                  ? "✓ حفظ التعديلات"
+                  : "＋ إضافة الزبون"
+              }
+            </button>
+
+            ${
+              editing
+                ? `
+                  <button
+                    class="danger-button"
+                    type="button"
+                    id="deleteCustomerFromForm"
+                  >
+                    حذف الزبون
+                  </button>
+                `
+                : ""
+            }
+
+          </div>
+
+        </form>
+
+      </section>
+
+    </div>
+
+    ${createBottomNavigation("more")}
+  `;
+
+
+  document
+    .getElementById("backCustomerForm")
+    ?.addEventListener(
+      "click",
+      showCustomers
+    );
+
+
+  document
+    .getElementById("customerForm")
+    ?.addEventListener(
+      "submit",
+      event => {
+
+        event.preventDefault();
+
+        saveCustomerForm(
+          customerId
+        );
+
+      }
+    );
+
+
+  document
+    .getElementById(
+      "deleteCustomerFromForm"
+    )
+    ?.addEventListener(
+      "click",
+      () => {
+
+        if (customerId !== null) {
+          deleteCustomer(
+            customerId
+          );
+        }
+
+      }
+    );
+
+
+  setupNavigation();
+}
+
+
+/* =========================================
+   حفظ الزبون
+========================================= */
+
+function saveCustomerForm(
+  customerId
+) {
+
+  const name =
+    document
+      .getElementById(
+        "customerName"
+      )
+      ?.value
+      .trim();
+
+  const phone =
+    document
+      .getElementById(
+        "customerPhone"
+      )
+      ?.value
+      .trim();
+
+  const notes =
+    document
+      .getElementById(
+        "customerNotes"
+      )
+      ?.value
+      .trim();
+
+
+  if (!name) {
+    alert("اكتب اسم الزبون.");
+    return;
+  }
+
+
+  const customers =
+    getCustomers();
+
+
+  if (customerId === null) {
+
+    const exists =
+      customers.some(
+        customer =>
+          customer.name
+            .trim()
+            .toLowerCase() ===
+          name.toLowerCase()
+      );
+
+
+    if (exists) {
+
+      alert(
+        "يوجد زبون بهذا الاسم مسبقًا."
+      );
+
+      return;
+    }
+
+
+    customers.push({
+      id: generateId("CUS"),
+      name,
+      phone,
+      notes,
+      createdAt:
+        new Date().toISOString()
+    });
+
+  } else {
+
+    const index =
+      customers.findIndex(
+        customer =>
+          String(customer.id) ===
+          String(customerId)
+      );
+
+
+    if (index === -1) {
+
+      alert(
+        "الزبون غير موجود."
+      );
+
+      return;
+    }
+
+
+    customers[index] = {
+      ...customers[index],
+      name,
+      phone,
+      notes
+    };
+  }
+
+
+  if (
+    saveCustomers(customers)
+  ) {
+
+    alert(
+      customerId === null
+        ? "تمت إضافة الزبون بنجاح."
+        : "تم حفظ تعديلات الزبون."
+    );
+
+    showCustomers();
+  }
+}
+
+
+/* =========================================
+   حذف الزبون
+========================================= */
+
+function deleteCustomer(
+  customerId
+) {
+
+  const customers =
+    getCustomers();
+
+  const customer =
+    customers.find(
+      item =>
+        String(item.id) ===
+        String(customerId)
+    );
+
+
+  if (!customer) {
+
+    alert(
+      "الزبون غير موجود."
+    );
+
+    return;
+  }
+
+
+  const debt =
+    getCustomerDebt(
+      customerId
+    );
+
+
+  if (debt.remaining > 0) {
+
+    alert(
+      "لا يمكن حذف هذا الزبون لأن عليه دينًا بقيمة " +
+      money(debt.remaining) +
+      "."
+    );
+
+    return;
+  }
+
+
+  const confirmed =
+    confirm(
+      `هل تريد حذف الزبون "${customer.name}"؟`
+    );
+
+
+  if (!confirmed) {
+    return;
+  }
+
+
+  const filtered =
+    customers.filter(
+      item =>
+        String(item.id) !==
+        String(customerId)
+    );
+
+
+  if (
+    saveCustomers(filtered)
+  ) {
+
+    alert(
+      "تم حذف الزبون."
+    );
+
+    showCustomers();
+  }
+}
+
+
+/* =========================================
+   البحث عن الزبائن
+========================================= */
+
+function searchCustomers(
+  event
+) {
+
+  const search =
+    event.target.value
+      .trim()
+      .toLowerCase();
+
+
+  const customers =
+    getCustomers();
+
+
+  const filtered =
+    customers.filter(
+      customer => {
+
+        const name =
+          String(
+            customer.name || ""
+          ).toLowerCase();
+
+        const phone =
+          String(
+            customer.phone || ""
+          ).toLowerCase();
+
+        return (
+          name.includes(search) ||
+          phone.includes(search)
+        );
+      }
+    );
+
+
+  const list =
+    document.getElementById(
+      "customersList"
+    );
+
+
+  if (list) {
+
+    list.innerHTML =
+      renderCustomers(
+        filtered
+      );
+  }
+
+
+  bindCustomerActions();
+}
+
+
+/* =========================================
+   أزرار الزبائن
+========================================= */
+
+function bindCustomerActions() {
+
+  document
+    .querySelectorAll(
+      "[data-customer-profile]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          showCustomerProfile(
+            button.dataset
+              .customerProfile
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      "[data-customer-edit]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          showCustomerForm(
+            button.dataset
+              .customerEdit
+          );
+
+        }
+      );
+
+    });
+
+
+  document
+    .querySelectorAll(
+      "[data-customer-delete]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteCustomer(
+            button.dataset
+              .customerDelete
+          );
+
+        }
+      );
+
+    });
+}
+
+
+/* =========================================
+   ملف الزبون
+========================================= */
+
+function showCustomerProfile(
+  customerId
+) {
+
+  const app = getApp();
+
+  if (!app) return;
+
+
+  const customer =
+    getCustomers().find(
+      item =>
+        String(item.id) ===
+        String(customerId)
+    );
+
+
+  if (!customer) {
+
+    alert(
+      "الزبون غير موجود."
+    );
+
+    showCustomers();
+
+    return;
+  }
+
+
+  const debt =
+    getCustomerDebt(
+      customerId
+    );
+
+
+  const purchases =
+    getCustomerPurchases(
+      customerId
+    );
+
+
+  const monthly =
+    getCustomerMonthlyPurchases(
+      customerId
+    );
+
+
+  const sales =
+    getSales()
+      .filter(
+        sale =>
+          String(
+            sale.customerId
+          ) ===
+          String(customerId)
+      );
+
+
+  const debts =
+    getDebts()
+      .filter(
+        item =>
+          String(
+            item.customerId
+          ) ===
+          String(customerId)
+      );
+
+
+  app.innerHTML = `
+    <div class="page">
+
+      <div class="page-header">
+
+        <button
+          class="back-button"
+          id="backCustomerProfile"
+        >
+          ←
+        </button>
+
+        <div>
+          <h1>
+            ملف الزبون
+          </h1>
+        </div>
+
+      </div>
+
+
+      <section class="hero">
+
+        <div>
+
+          <span class="hero-label">
+            الزبون
+          </span>
+
+          <h2>
+            ${escapeHtml(
+              customer.name
+            )}
+          </h2>
+
+          <p>
+            ${
+              customer.phone
+                ? "☎ " +
+                  escapeHtml(
+                    customer.phone
+                  )
+                : "لا يوجد رقم هاتف"
+            }
+          </p>
+
+        </div>
+
+        <div class="seal">
+          EB
+        </div>
+
+      </section>
+
+
+      <section class="stats">
+
+        <div class="stat">
+          <span>كل المشتريات</span>
+          <strong>
+            ${money(purchases)}
+          </strong>
+          <small>ل.س</small>
+        </div>
+
+        <div class="stat">
+          <span>هذا الشهر</span>
+          <strong>
+            ${money(monthly)}
+          </strong>
+          <small>ل.س</small>
+        </div>
+
+        <div class="stat">
+          <span>المدفوع</span>
+          <strong>
+            ${money(debt.totalPaid)}
+          </strong>
+          <small>ل.س</small>
+        </div>
+
+        <div class="stat">
+          <span>المتبقي</span>
+          <strong>
+            ${money(debt.remaining)}
+          </strong>
+          <small>ل.س</small>
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="section-heading">
+          <h3>
+            إجراءات الزبون
+          </h3>
+        </div>
+
+        <div
+          class="quickgrid"
+          style="
+            grid-template-columns:
+              repeat(2,1fr);
+          "
+        >
+
+          <button
+            class="quick-card"
+            id="customerEditProfile"
+          >
+            <span class="quick-icon">
+              ✎
+            </span>
+
+            <strong>
+              تعديل البيانات
+            </strong>
+
+            <small>
+              تعديل اسم أو هاتف
+            </small>
+
+          </button>
+
+
+          <button
+            class="quick-card"
+            id="customerPaymentButton"
+          >
+            <span class="quick-icon">
+              ₪
+            </span>
+
+            <strong>
+              تسجيل دفعة
+            </strong>
+
+            <small>
+              تسجيل مبلغ مدفوع
+            </small>
+
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="section-heading">
+          <h3>
+            المشتريات
+          </h3>
+
+          <span>
+            ${sales.length} فاتورة
+          </span>
+        </div>
+
+        <div class="activity-list">
+
+          ${
+            sales.length
+              ? sales
+                  .slice()
+                  .reverse()
+                  .map(
+                    sale => `
+                      <button
+                        class="sale-card"
+                        data-open-invoice="${
+                          escapeHtml(
+                            sale.invoiceNumber
+                          )
+                        }"
+                      >
+
+                        <div>
+
+                          <strong>
+                            ${escapeHtml(
+                              sale.invoiceNumber
+                            )}
+                          </strong>
+
+                          <small>
+                            ${formatDate(
+                              sale.createdAt
+                            )}
+                          </small>
+
+                        </div>
+
+                        <div class="sale-total">
+                          ${money(
+                            sale.total
+                          )}
+                        </div>
+
+                      </button>
+                    `
+                  )
+                  .join("")
+              : `
+                <div class="empty-state">
+                  <span>🧾</span>
+                  <strong>
+                    لا توجد مشتريات
+                  </strong>
+                  <small>
+                    لم يتم تسجيل مبيعات لهذا الزبون.
+                  </small>
+                </div>
+              `
+          }
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="section-heading">
+          <h3>
+            المشتريات بالدين
+          </h3>
+
+          <span>
+            ${debts.length} عملية
+          </span>
+        </div>
+
+        <div class="activity-list">
+
+          ${
+            debts.length
+              ? debts
+                  .slice()
+                  .reverse()
+                  .map(
+                    debtItem => `
+                      <div class="debt-card">
+
+                        <strong>
+                          ${escapeHtml(
+                            debtItem.productName
+                          )}
+                        </strong>
+
+                        <small>
+                          الكمية:
+                          ${number(
+                            debtItem.qty
+                          )}
+                        </small>
+
+                        <small>
+                          التاريخ:
+                          ${formatDate(
+                            debtItem.createdAt
+                          )}
+                        </small>
+
+                        <strong
+                          class="remaining-amount"
+                        >
+                          ${money(
+                            debtItem.amount
+                          )}
+                        </strong>
+
+                      </div>
+                    `
+                  )
+                  .join("")
+              : `
+                <div class="empty-state">
+                  <span>✓</span>
+                  <strong>
+                    لا توجد مشتريات بالدين
+                  </strong>
+                  <small>
+                    حساب الزبون خالٍ من الديون المسجلة.
+                  </small>
+                </div>
+              `
+          }
+
+        </div>
+
+      </section>
+
+    </div>
+
+    ${createBottomNavigation("more")}
+  `;
+
+
+  document
+    .getElementById(
+      "backCustomerProfile"
+    )
+    ?.addEventListener(
+      "click",
+      showCustomers
+    );
+
+
+  document
+    .getElementById(
+      "customerEditProfile"
+    )
+    ?.addEventListener(
+      "click",
+      () =>
+        showCustomerForm(
+          customerId
+        )
+    );
+
+
+  document
+    .getElementById(
+      "customerPaymentButton"
+    )
+    ?.addEventListener(
+      "click",
+      () =>
+        addCustomerPayment(
+          customerId
+        )
+    );
+
+
+  bindInvoiceButtons();
+
+  setupNavigation();
+}
+
+
+/* =========================================
+   تسجيل دفعة من الزبون
+========================================= */
+
+function addCustomerPayment(
+  customerId
+) {
+
+  const customer =
+    getCustomers().find(
+      item =>
+        String(item.id) ===
+        String(customerId)
+    );
+
+
+  if (!customer) {
+    alert("الزبون غير موجود.");
+    return;
+  }
+
+
+  const debt =
+    getCustomerDebt(
+      customerId
+    );
+
+
+  if (debt.remaining <= 0) {
+
+    alert(
+      "لا يوجد مبلغ متبقي على هذا الزبون."
+    );
+
+    return;
+  }
+
+
+  const value =
+    prompt(
+      `المبلغ المتبقي على ${customer.name}: ${money(
+        debt.remaining
+      )}\n\nاكتب المبلغ المدفوع:`,
+      String(debt.remaining)
+    );
+
+
+  if (value === null) {
+    return;
+  }
+
+
+  const amount =
+    Number(value);
+
+
+  if (
+    !Number.isFinite(amount) ||
+    amount <= 0
+  ) {
+
+    alert(
+      "أدخل مبلغًا صحيحًا."
+    );
+
+    return;
+  }
+
+
+  if (amount > debt.remaining) {
+
+    alert(
+      "المبلغ أكبر من الدين المتبقي."
+    );
+
+    return;
+  }
+
+
+  const payments =
+    getPayments();
+
+
+  payments.push({
+    id: generateId("PAY"),
+    customerId:
+      customer.id,
+    customerName:
+      customer.name,
+    amount,
+    createdAt:
+      new Date().toISOString()
+  });
+
+
+  if (
+    savePayments(payments)
+  ) {
+
+    alert(
+      "تم تسجيل الدفعة بنجاح."
+    );
+
+    showCustomerProfile(
+      customerId
+    );
+  }
+}
 });
