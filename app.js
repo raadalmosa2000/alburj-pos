@@ -1,58 +1,70 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // =========================================
-  // إعدادات عامة
-  // =========================================
+  // =====================================================
+  // إعدادات النظام
+  // =====================================================
 
   const CURRENCY = "ل.س";
-  const STORAGE_KEY = "alburj_sales";
+  const SALES_KEY = "alburj_sales";
   const PRODUCTS_KEY = "alburj_products";
 
   let cart = [];
 
-  // =========================================
+  // =====================================================
   // المنتجات الافتراضية
-  // =========================================
+  // =====================================================
 
   const defaultProducts = [
     {
       id: 1,
       name: "عصير برتقال",
-      price: 5000
+      price: 5000,
+      stock: 20,
+      minStock: 5
     },
     {
       id: 2,
       name: "مياه معدنية",
-      price: 2000
+      price: 2000,
+      stock: 50,
+      minStock: 10
     },
     {
       id: 3,
       name: "بيبسي",
-      price: 4000
+      price: 4000,
+      stock: 30,
+      minStock: 5
     },
     {
       id: 4,
       name: "شيبس",
-      price: 3500
+      price: 3500,
+      stock: 25,
+      minStock: 5
     },
     {
       id: 5,
       name: "بسكويت",
-      price: 3000
+      price: 3000,
+      stock: 25,
+      minStock: 5
     },
     {
       id: 6,
       name: "حليب",
-      price: 6000
+      price: 6000,
+      stock: 15,
+      minStock: 5
     }
   ];
 
-  // =========================================
-  // أدوات مساعدة
-  // =========================================
+  // =====================================================
+  // أدوات التخزين
+  // =====================================================
 
   function getSales() {
     try {
-      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      return JSON.parse(localStorage.getItem(SALES_KEY)) || [];
     } catch (error) {
       console.error("خطأ في قراءة المبيعات:", error);
       return [];
@@ -60,10 +72,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function saveSales(sales) {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(sales)
-    );
+    localStorage.setItem(SALES_KEY, JSON.stringify(sales));
   }
 
   function getProducts() {
@@ -72,16 +81,47 @@ document.addEventListener("DOMContentLoaded", () => {
         localStorage.getItem(PRODUCTS_KEY)
       );
 
-      return saved && Array.isArray(saved)
-        ? saved
-        : defaultProducts;
+      if (Array.isArray(saved)) {
+        return saved;
+      }
+
+      localStorage.setItem(
+        PRODUCTS_KEY,
+        JSON.stringify(defaultProducts)
+      );
+
+      return defaultProducts;
     } catch (error) {
+      localStorage.setItem(
+        PRODUCTS_KEY,
+        JSON.stringify(defaultProducts)
+      );
+
       return defaultProducts;
     }
   }
 
+  function saveProducts(products) {
+    localStorage.setItem(
+      PRODUCTS_KEY,
+      JSON.stringify(products)
+    );
+  }
+
+  // =====================================================
+  // أدوات عامة
+  // =====================================================
+
   function formatMoney(value) {
-    return Number(value || 0).toLocaleString("ar-SY") + " " + CURRENCY;
+    return (
+      Number(value || 0).toLocaleString("ar-SY") +
+      " " +
+      CURRENCY
+    );
+  }
+
+  function formatNumber(value) {
+    return Number(value || 0).toLocaleString("ar-SY");
   }
 
   function formatDate(date) {
@@ -104,9 +144,13 @@ document.addEventListener("DOMContentLoaded", () => {
     );
   }
 
-  // =========================================
+  function generateProductId() {
+    return Date.now() + Math.floor(Math.random() * 1000);
+  }
+
+  // =====================================================
   // لوحة التحكم
-  // =========================================
+  // =====================================================
 
   function showDashboard() {
     const app = document.querySelector(".app");
@@ -114,22 +158,33 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!app) return;
 
     const sales = getSales();
+    const products = getProducts();
 
     const today = new Date();
 
     const todaySales = sales.filter((sale) => {
-      const saleDate = new Date(sale.createdAt);
+      const date = new Date(sale.createdAt);
 
       return (
-        saleDate.getFullYear() === today.getFullYear() &&
-        saleDate.getMonth() === today.getMonth() &&
-        saleDate.getDate() === today.getDate()
+        date.getFullYear() === today.getFullYear() &&
+        date.getMonth() === today.getMonth() &&
+        date.getDate() === today.getDate()
       );
     });
 
     const totalToday = todaySales.reduce(
       (sum, sale) => sum + Number(sale.total || 0),
       0
+    );
+
+    const totalSales = sales.reduce(
+      (sum, sale) => sum + Number(sale.total || 0),
+      0
+    );
+
+    const lowStock = products.filter(
+      (product) =>
+        Number(product.stock) <= Number(product.minStock)
     );
 
     app.innerHTML = `
@@ -148,15 +203,17 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <div class="hero">
           <div>
-            <span class="hero-label">إجمالي مبيعات اليوم</span>
+            <span class="hero-label">
+              إجمالي مبيعات اليوم
+            </span>
 
             <h2>
               ${formatMoney(totalToday)}
             </h2>
 
             <p>
-              ${todaySales.length}
-              فاتورة مسجلة اليوم
+              ${formatNumber(todaySales.length)}
+              فاتورة اليوم
             </p>
           </div>
 
@@ -175,29 +232,21 @@ document.addEventListener("DOMContentLoaded", () => {
           </div>
 
           <div class="stat">
-            <span>فواتير اليوم</span>
-            <strong>${todaySales.length}</strong>
+            <span>الفواتير</span>
+            <strong>${formatNumber(sales.length)}</strong>
             <small>فاتورة</small>
           </div>
 
           <div class="stat">
-            <span>كل المبيعات</span>
-            <strong>${sales.length}</strong>
-            <small>فاتورة</small>
+            <span>المنتجات</span>
+            <strong>${formatNumber(products.length)}</strong>
+            <small>منتج</small>
           </div>
 
           <div class="stat">
             <span>إجمالي المبيعات</span>
-            <strong>
-              ${formatMoney(
-                sales.reduce(
-                  (sum, sale) =>
-                    sum + Number(sale.total || 0),
-                  0
-                )
-              )}
-            </strong>
-            <small>ل.س</small>
+            <strong>${formatMoney(totalSales)}</strong>
+            <small>${CURRENCY}</small>
           </div>
 
         </div>
@@ -210,61 +259,71 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="quickgrid">
 
-            <button
-              class="quick-card"
-              id="newSaleButton"
-            >
+            <button class="quick-card" id="newSaleButton">
               <div class="quick-icon">🛒</div>
-
               <strong>بيع جديد</strong>
-
-              <small>
-                إنشاء فاتورة جديدة
-              </small>
+              <small>إنشاء فاتورة</small>
             </button>
 
-            <button
-              class="quick-card"
-              id="salesHistoryButton"
-            >
+            <button class="quick-card" id="salesHistoryButton">
               <div class="quick-icon">📋</div>
-
               <strong>سجل المبيعات</strong>
-
-              <small>
-                عرض جميع الفواتير
-              </small>
+              <small>عرض الفواتير</small>
             </button>
 
-            <button
-              class="quick-card"
-              id="productsButton"
-            >
+            <button class="quick-card" id="productsButton">
               <div class="quick-icon">📦</div>
-
-              <strong>المنتجات</strong>
-
-              <small>
-                إدارة المنتجات
-              </small>
-            </button>
-
-            <button
-              class="quick-card"
-              id="customersButton"
-            >
-              <div class="quick-icon">👤</div>
-
-              <strong>العملاء</strong>
-
-              <small>
-                إدارة العملاء
-              </small>
+              <strong>المنتجات والمخزون</strong>
+              <small>إدارة المنتجات</small>
             </button>
 
           </div>
 
         </div>
+
+        ${
+          lowStock.length
+            ? `
+              <div class="section">
+
+                <div class="section-heading">
+                  <h3>⚠️ مخزون منخفض</h3>
+                  <span>${lowStock.length} منتج</span>
+                </div>
+
+                <div class="activity-list">
+
+                  ${lowStock
+                    .map(
+                      (product) => `
+                        <div class="sale-card">
+
+                          <div>
+                            <strong>
+                              ${product.name}
+                            </strong>
+
+                            <small>
+                              الحد الأدنى:
+                              ${formatNumber(product.minStock)}
+                            </small>
+                          </div>
+
+                          <div class="sale-total">
+                            ${formatNumber(product.stock)}
+                          </div>
+
+                        </div>
+                      `
+                    )
+                    .join("")}
+
+                </div>
+
+              </div>
+            `
+            : ""
+        }
 
         <div class="section">
 
@@ -285,7 +344,7 @@ document.addEventListener("DOMContentLoaded", () => {
                     <span>🧾</span>
                     <strong>لا توجد مبيعات بعد</strong>
                     <small>
-                      عند إتمام أول عملية بيع ستظهر هنا.
+                      ستظهر الفواتير هنا بعد إتمام البيع.
                     </small>
                   </div>
                 `
@@ -315,6 +374,10 @@ document.addEventListener("DOMContentLoaded", () => {
       ?.addEventListener("click", showSalesHistory);
 
     document
+      .getElementById("productsButton")
+      ?.addEventListener("click", showProducts);
+
+    document
       .getElementById("viewAllSales")
       ?.addEventListener("click", showSalesHistory);
 
@@ -322,33 +385,27 @@ document.addEventListener("DOMContentLoaded", () => {
       .getElementById("refreshDashboard")
       ?.addEventListener("click", showDashboard);
 
-    document
-      .getElementById("productsButton")
-      ?.addEventListener("click", () => {
-        alert("قسم المنتجات جاهز للتطوير.");
-      });
-
-    document
-      .getElementById("customersButton")
-      ?.addEventListener("click", () => {
-        alert("قسم العملاء جاهز للتطوير.");
-      });
-
     setupNavigation();
   }
 
-  // =========================================
-  // بطاقة بيع
-  // =========================================
+  // =====================================================
+  // بطاقة البيع
+  // =====================================================
 
   function createSaleCard(sale) {
     return `
-      <div
+      <button
         class="sale-card"
-        data-invoice="${sale.invoiceNumber}"
+        data-open-invoice="${sale.invoiceNumber}"
+        style="
+          width:100%;
+          border:1px solid var(--border);
+          text-align:right;
+        "
       >
 
         <div>
+
           <strong>
             ${sale.invoiceNumber}
           </strong>
@@ -360,22 +417,22 @@ document.addEventListener("DOMContentLoaded", () => {
           </small>
 
           <small>
-            الدفع:
             ${sale.paymentMethod || "نقدي"}
           </small>
+
         </div>
 
         <div class="sale-total">
           ${formatMoney(sale.total)}
         </div>
 
-      </div>
+      </button>
     `;
   }
 
-  // =========================================
+  // =====================================================
   // شاشة البيع
-  // =========================================
+  // =====================================================
 
   function showSalesScreen() {
     const app = document.querySelector(".app");
@@ -422,10 +479,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span>${products.length} منتج</span>
           </div>
 
-          <div
-            class="products-grid"
-            id="productsGrid"
-          >
+          <div class="products-grid">
 
             ${products
               .map(
@@ -434,6 +488,11 @@ document.addEventListener("DOMContentLoaded", () => {
                     class="product-button"
                     data-id="${product.id}"
                     data-name="${product.name}"
+                    ${
+                      Number(product.stock) <= 0
+                        ? "disabled"
+                        : ""
+                    }
                   >
 
                     <strong>
@@ -441,8 +500,12 @@ document.addEventListener("DOMContentLoaded", () => {
                     </strong>
 
                     <small>
-                      ${Number(product.price).toLocaleString("ar-SY")}
-                      ${CURRENCY}
+                      ${formatMoney(product.price)}
+                    </small>
+
+                    <small>
+                      المخزون:
+                      ${formatNumber(product.stock)}
                     </small>
 
                   </button>
@@ -454,42 +517,40 @@ document.addEventListener("DOMContentLoaded", () => {
 
         </div>
 
-        <div class="section cart">
+        <div class="section">
 
           <div class="section-heading">
             <h3>السلة</h3>
             <span id="cartCount">0 منتج</span>
           </div>
 
-          <div
-            class="form-card"
-            id="cartContainer"
-          >
+          <div class="form-card" id="cartContainer">
+
             <div class="empty-state">
               <span>🛒</span>
               <strong>السلة فارغة</strong>
               <small>
-                اضغط على أي منتج لإضافته.
+                اضغط على منتج لإضافته.
               </small>
             </div>
+
           </div>
 
-          <div
-            class="total-box"
-            id="totalBox"
-          >
+          <div class="total-box">
+
             <span>الإجمالي</span>
 
             <strong id="totalElement">
               0 ${CURRENCY}
             </strong>
+
           </div>
 
           <div
             style="
-              margin-top:15px;
               display:grid;
               gap:10px;
+              margin-top:15px;
             "
           >
 
@@ -518,35 +579,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document
       .getElementById("backToDashboard")
-      ?.addEventListener(
-        "click",
-        showDashboard
-      );
+      ?.addEventListener("click", showDashboard);
 
     document
       .querySelectorAll(".product-button")
       .forEach((button) => {
+        button.addEventListener("click", () => {
 
-        button.addEventListener(
-          "click",
-          () => {
+          const id = Number(button.dataset.id);
 
-            const id = Number(
-              button.dataset.id
-            );
+          const product = getProducts().find(
+            (item) => Number(item.id) === id
+          );
 
-            const product =
-              products.find(
-                (item) =>
-                  Number(item.id) === id
-              );
-
-            if (product) {
-              addToCart(product);
-            }
+          if (product) {
+            addToCart(product);
           }
-        );
 
+        });
       });
 
     document
@@ -568,30 +618,35 @@ document.addEventListener("DOMContentLoaded", () => {
       ?.addEventListener(
         "click",
         () => {
-
           cart = [];
-
           renderCart();
-
         }
       );
 
     renderCart();
-
     setupNavigation();
   }
 
-  // =========================================
-  // إضافة منتج للسلة
-  // =========================================
+  // =====================================================
+  // إضافة للسلة
+  // =====================================================
 
   function addToCart(product) {
-    const existing =
-      cart.find(
-        (item) =>
-          Number(item.id) ===
-          Number(product.id)
-      );
+    const currentStock = Number(product.stock || 0);
+
+    const existing = cart.find(
+      (item) =>
+        Number(item.id) === Number(product.id)
+    );
+
+    const currentQty = existing
+      ? Number(existing.qty)
+      : 0;
+
+    if (currentQty >= currentStock) {
+      alert("لا توجد كمية كافية في المخزون.");
+      return;
+    }
 
     if (existing) {
       existing.qty += 1;
@@ -607,25 +662,19 @@ document.addEventListener("DOMContentLoaded", () => {
     renderCart();
   }
 
-  // =========================================
+  // =====================================================
   // عرض السلة
-  // =========================================
+  // =====================================================
 
   function renderCart() {
     const container =
-      document.getElementById(
-        "cartContainer"
-      );
+      document.getElementById("cartContainer");
 
     const totalElement =
-      document.getElementById(
-        "totalElement"
-      );
+      document.getElementById("totalElement");
 
     const cartCount =
-      document.getElementById(
-        "cartCount"
-      );
+      document.getElementById("cartCount");
 
     if (!container) return;
 
@@ -645,7 +694,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (cartCount) {
       cartCount.textContent =
-        count + " منتج";
+        `${formatNumber(count)} منتج`;
     }
 
     if (totalElement) {
@@ -653,14 +702,13 @@ document.addEventListener("DOMContentLoaded", () => {
         formatMoney(total);
     }
 
-    if (cart.length === 0) {
-
+    if (!cart.length) {
       container.innerHTML = `
         <div class="empty-state">
           <span>🛒</span>
           <strong>السلة فارغة</strong>
           <small>
-            اضغط على أي منتج لإضافته.
+            اضغط على منتج لإضافته.
           </small>
         </div>
       `;
@@ -668,146 +716,153 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    container.innerHTML =
-      cart
-        .map(
-          (item, index) => `
-            <div class="cart-item">
+    container.innerHTML = cart
+      .map(
+        (item, index) => `
+          <div class="cart-item">
 
-              <div>
+            <div>
 
-                <strong>
-                  ${item.name}
-                </strong>
+              <strong>
+                ${item.name}
+              </strong>
 
-                <small>
-                  ${formatMoney(item.price)}
-                  ×
-                  ${item.qty}
-                </small>
-
-              </div>
-
-              <div
-                style="
-                  display:flex;
-                  align-items:center;
-                  gap:5px;
-                "
-              >
-
-                <button
-                  class="secondary-button"
-                  style="
-                    width:38px;
-                    min-height:38px;
-                    padding:5px;
-                  "
-                  data-action="increase"
-                  data-index="${index}"
-                >
-                  +
-                </button>
-
-                <strong>
-                  ${item.qty}
-                </strong>
-
-                <button
-                  class="secondary-button"
-                  style="
-                    width:38px;
-                    min-height:38px;
-                    padding:5px;
-                  "
-                  data-action="decrease"
-                  data-index="${index}"
-                >
-                  −
-                </button>
-
-                <button
-                  class="danger-button"
-                  style="
-                    width:38px;
-                    min-height:38px;
-                    padding:5px;
-                  "
-                  data-action="remove"
-                  data-index="${index}"
-                >
-                  ×
-                </button>
-
-              </div>
+              <small>
+                ${formatMoney(item.price)}
+              </small>
 
             </div>
-          `
-        )
-        .join("");
+
+            <div
+              style="
+                display:flex;
+                align-items:center;
+                gap:5px;
+              "
+            >
+
+              <button
+                class="secondary-button"
+                style="
+                  width:38px;
+                  min-height:38px;
+                  padding:5px;
+                "
+                data-action="increase"
+                data-index="${index}"
+              >
+                +
+              </button>
+
+              <strong>
+                ${item.qty}
+              </strong>
+
+              <button
+                class="secondary-button"
+                style="
+                  width:38px;
+                  min-height:38px;
+                  padding:5px;
+                "
+                data-action="decrease"
+                data-index="${index}"
+              >
+                −
+              </button>
+
+              <button
+                class="danger-button"
+                style="
+                  width:38px;
+                  min-height:38px;
+                  padding:5px;
+                "
+                data-action="remove"
+                data-index="${index}"
+              >
+                ×
+              </button>
+
+            </div>
+
+          </div>
+        `
+      )
+      .join("");
 
     container
       .querySelectorAll("[data-action]")
       .forEach((button) => {
 
-        button.addEventListener(
-          "click",
-          () => {
+        button.addEventListener("click", () => {
 
-            const index =
-              Number(
-                button.dataset.index
+          const index =
+            Number(button.dataset.index);
+
+          const action =
+            button.dataset.action;
+
+          const product =
+            getProducts().find(
+              (item) =>
+                Number(item.id) ===
+                Number(cart[index]?.id)
+            );
+
+          if (!cart[index]) return;
+
+          if (action === "increase") {
+
+            if (
+              product &&
+              Number(cart[index].qty) >=
+                Number(product.stock)
+            ) {
+              alert(
+                "لا توجد كمية إضافية في المخزون."
               );
-
-            const action =
-              button.dataset.action;
-
-            if (action === "increase") {
-              cart[index].qty += 1;
+              return;
             }
 
-            if (action === "decrease") {
+            cart[index].qty += 1;
+          }
 
-              cart[index].qty -= 1;
+          if (action === "decrease") {
 
-              if (
-                cart[index].qty <= 0
-              ) {
-                cart.splice(index, 1);
-              }
-            }
+            cart[index].qty -= 1;
 
-            if (action === "remove") {
+            if (cart[index].qty <= 0) {
               cart.splice(index, 1);
             }
-
-            renderCart();
           }
-        );
+
+          if (action === "remove") {
+            cart.splice(index, 1);
+          }
+
+          renderCart();
+        });
 
       });
   }
 
-  // =========================================
-  // البحث عن المنتجات
-  // =========================================
+  // =====================================================
+  // البحث عن المنتجات أثناء البيع
+  // =====================================================
 
   function filterProducts(event) {
-
     const search =
       event.target.value
         .trim()
         .toLowerCase();
 
     document
-      .querySelectorAll(
-        ".product-button"
-      )
+      .querySelectorAll(".product-button")
       .forEach((button) => {
 
         const name =
-          button.dataset.name
-            .toLowerCase();
+          button.dataset.name.toLowerCase();
 
         button.style.display =
           name.includes(search)
@@ -816,73 +871,105 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // =========================================
+  // =====================================================
   // إتمام البيع
-  // =========================================
+  // =====================================================
 
   function completeSale() {
-
-    if (cart.length === 0) {
-
-      alert(
-        "أضف منتجًا إلى السلة أولًا."
-      );
-
+    if (!cart.length) {
+      alert("أضف منتجًا إلى السلة أولًا.");
       return;
     }
 
-    const total =
-      cart.reduce(
-        (sum, item) =>
-          sum +
-          Number(item.price) *
-            Number(item.qty),
-        0
+    const products = getProducts();
+
+    // التحقق من المخزون مرة أخيرة قبل الحفظ
+    for (const item of cart) {
+
+      const product = products.find(
+        (p) => Number(p.id) === Number(item.id)
       );
 
-    const paymentMethod =
-      prompt(
-        "طريقة الدفع:\n\nاكتب نقدي أو بطاقة",
-        "نقدي"
-      );
+      if (!product) {
+        alert(
+          `المنتج ${item.name} غير موجود.`
+        );
+        return;
+      }
 
-    if (paymentMethod === null) {
+      if (
+        Number(item.qty) >
+        Number(product.stock)
+      ) {
+        alert(
+          `الكمية المطلوبة من ${item.name} أكبر من المخزون المتوفر.`
+        );
+        return;
+      }
+    }
+
+    const total = cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.price) *
+          Number(item.qty),
+      0
+    );
+
+    const paymentInput = prompt(
+      "طريقة الدفع:\n\nاكتب نقدي أو بطاقة",
+      "نقدي"
+    );
+
+    if (paymentInput === null) {
       return;
     }
 
     const payment =
-      paymentMethod.trim() === "بطاقة"
+      paymentInput.trim() === "بطاقة"
         ? "بطاقة"
         : "نقدي";
 
     const sale = {
-
-      invoiceNumber:
-        generateInvoiceNumber(),
+      invoiceNumber: generateInvoiceNumber(),
 
       createdAt:
         new Date().toISOString(),
 
-      total:
-
-        total,
+      total: total,
 
       paymentMethod:
         payment,
 
-      items:
-        cart.map(
-          (item) => ({
-            id: item.id,
-            name: item.name,
-            qty: item.qty,
-            price: item.price,
-            subtotal:
-              Number(item.qty) *
-              Number(item.price)
-          })
-        )
+      items: cart.map((item) => ({
+        id: item.id,
+        name: item.name,
+        qty: Number(item.qty),
+        price: Number(item.price),
+        subtotal:
+          Number(item.qty) *
+          Number(item.price)
+      }))
     };
+
+    // خصم المخزون
+    cart.forEach((item) => {
+
+      const product = products.find(
+        (p) =>
+          Number(p.id) ===
+          Number(item.id)
+      );
+
+      if (product) {
+        product.stock =
+          Number(product.stock) -
+          Number(item.qty);
+      }
+
+    });
+
+    saveProducts(products);
 
     const sales = getSales();
 
@@ -892,22 +979,26 @@ document.addEventListener("DOMContentLoaded", () => {
 
     cart = [];
 
+    alert(
+      "تم حفظ الفاتورة بنجاح.\n" +
+      "رقم الفاتورة: " +
+      sale.invoiceNumber
+    );
+
     showInvoice(sale);
   }
 
-  // =========================================
+  // =====================================================
   // الفاتورة
-  // =========================================
+  // =====================================================
 
   function showInvoice(sale) {
-
     const app =
       document.querySelector(".app");
 
     if (!app) return;
 
     app.innerHTML = `
-
       <div class="page">
 
         <div class="invoice">
@@ -931,38 +1022,22 @@ document.addEventListener("DOMContentLoaded", () => {
           <div class="invoice-meta">
 
             <div>
-              <strong>
-                رقم الفاتورة:
-              </strong>
-
+              <strong>رقم الفاتورة:</strong>
               ${sale.invoiceNumber}
             </div>
 
             <div>
-              <strong>
-                التاريخ:
-              </strong>
-
-              ${formatDate(
-                sale.createdAt
-              )}
+              <strong>التاريخ:</strong>
+              ${formatDate(sale.createdAt)}
             </div>
 
             <div>
-              <strong>
-                الوقت:
-              </strong>
-
-              ${formatTime(
-                sale.createdAt
-              )}
+              <strong>الوقت:</strong>
+              ${formatTime(sale.createdAt)}
             </div>
 
             <div>
-              <strong>
-                طريقة الدفع:
-              </strong>
-
+              <strong>طريقة الدفع:</strong>
               ${sale.paymentMethod}
             </div>
 
@@ -971,14 +1046,12 @@ document.addEventListener("DOMContentLoaded", () => {
           <table class="invoice-table">
 
             <thead>
-
               <tr>
                 <th>المنتج</th>
                 <th>الكمية</th>
                 <th>السعر</th>
                 <th>المجموع</th>
               </tr>
-
             </thead>
 
             <tbody>
@@ -988,28 +1061,16 @@ document.addEventListener("DOMContentLoaded", () => {
                   (item) => `
                     <tr>
 
+                      <td>${item.name}</td>
+
+                      <td>${formatNumber(item.qty)}</td>
+
                       <td>
-                        ${item.name}
+                        ${formatMoney(item.price)}
                       </td>
 
                       <td>
-                        ${item.qty}
-                      </td>
-
-                      <td>
-                        ${Number(
-                          item.price
-                        ).toLocaleString(
-                          "ar-SY"
-                        )}
-                      </td>
-
-                      <td>
-                        ${Number(
-                          item.subtotal
-                        ).toLocaleString(
-                          "ar-SY"
-                        )}
+                        ${formatMoney(item.subtotal)}
                       </td>
 
                     </tr>
@@ -1023,14 +1084,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="invoice-total">
 
-            <span>
-              الإجمالي
-            </span>
+            <span>الإجمالي</span>
 
             <h2>
-              ${formatMoney(
-                sale.total
-              )}
+              ${formatMoney(sale.total)}
             </h2>
 
           </div>
@@ -1077,16 +1134,13 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
 
       </div>
-
     `;
 
     document
       .getElementById("printInvoice")
       ?.addEventListener(
         "click",
-        () => {
-          window.print();
-        }
+        () => window.print()
       );
 
     document
@@ -1111,12 +1165,11 @@ document.addEventListener("DOMContentLoaded", () => {
       );
   }
 
-  // =========================================
+  // =====================================================
   // سجل المبيعات
-  // =========================================
+  // =====================================================
 
   function showSalesHistory() {
-
     const app =
       document.querySelector(".app");
 
@@ -1133,7 +1186,6 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     app.innerHTML = `
-
       <div class="page">
 
         <div class="page-header">
@@ -1146,9 +1198,7 @@ document.addEventListener("DOMContentLoaded", () => {
           </button>
 
           <div>
-            <h1>
-              سجل المبيعات
-            </h1>
+            <h1>سجل المبيعات</h1>
           </div>
 
         </div>
@@ -1159,7 +1209,7 @@ document.addEventListener("DOMContentLoaded", () => {
             id="salesSearch"
             class="search-input"
             type="search"
-            placeholder="🔎 ابحث برقم الفاتورة أو اسم المنتج..."
+            placeholder="🔎 ابحث برقم الفاتورة أو المنتج..."
           >
 
         </div>
@@ -1167,25 +1217,13 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="stats">
 
           <div class="stat">
-            <span>
-              عدد الفواتير
-            </span>
-
-            <strong>
-              ${sales.length}
-            </strong>
+            <span>عدد الفواتير</span>
+            <strong>${formatNumber(sales.length)}</strong>
           </div>
 
           <div class="stat">
-            <span>
-              إجمالي المبيعات
-            </span>
-
-            <strong>
-              ${formatMoney(
-                totalSales
-              )}
-            </strong>
+            <span>إجمالي المبيعات</span>
+            <strong>${formatMoney(totalSales)}</strong>
           </div>
 
         </div>
@@ -1194,12 +1232,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
           <div class="section-heading">
 
-            <h3>
-              الفواتير
-            </h3>
+            <h3>الفواتير</h3>
 
             <span id="salesResultCount">
-              ${sales.length} فاتورة
+              ${formatNumber(sales.length)} فاتورة
             </span>
 
           </div>
@@ -1208,11 +1244,7 @@ document.addEventListener("DOMContentLoaded", () => {
             class="activity-list"
             id="salesList"
           >
-
-            ${renderSalesList(
-              sales
-            )}
-
+            ${renderSalesList(sales)}
           </div>
 
         </div>
@@ -1236,56 +1268,19 @@ document.addEventListener("DOMContentLoaded", () => {
         searchSales
       );
 
-    document
-      .querySelectorAll(
-        "[data-open-invoice]"
-      )
-      .forEach((button) => {
-
-        button.addEventListener(
-          "click",
-          () => {
-
-            const invoice =
-              button.dataset
-                .openInvoice;
-
-            const sale =
-              getSales().find(
-                (item) =>
-                  item.invoiceNumber ===
-                  invoice
-              );
-
-            if (sale) {
-              showInvoice(sale);
-            }
-          }
-        );
-
-      });
+    setupInvoiceButtons();
 
     setupNavigation();
   }
 
-  // =========================================
-  // عرض قائمة المبيعات
-  // =========================================
-
   function renderSalesList(sales) {
-
     if (!sales.length) {
-
       return `
         <div class="empty-state">
           <span>🧾</span>
-
-          <strong>
-            لا توجد فواتير
-          </strong>
-
+          <strong>لا توجد فواتير</strong>
           <small>
-            لم يتم العثور على أي مبيعات.
+            لم يتم العثور على مبيعات.
           </small>
         </div>
       `;
@@ -1313,29 +1308,21 @@ document.addEventListener("DOMContentLoaded", () => {
               </strong>
 
               <small>
-                ${formatDate(
-                  sale.createdAt
-                )}
+                ${formatDate(sale.createdAt)}
                 -
-                ${formatTime(
-                  sale.createdAt
-                )}
+                ${formatTime(sale.createdAt)}
               </small>
 
               <small>
-                ${sale.items.length}
-                منتج
+                ${sale.items.length} منتج
                 -
-                الدفع:
                 ${sale.paymentMethod}
               </small>
 
             </div>
 
             <div class="sale-total">
-              ${formatMoney(
-                sale.total
-              )}
+              ${formatMoney(sale.total)}
             </div>
 
           </button>
@@ -1344,50 +1331,71 @@ document.addEventListener("DOMContentLoaded", () => {
       .join("");
   }
 
-  // =========================================
-  // البحث في سجل المبيعات
-  // =========================================
+  function setupInvoiceButtons() {
+    document
+      .querySelectorAll("[data-open-invoice]")
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const invoice =
+              button.dataset.openInvoice;
+
+            const sale =
+              getSales().find(
+                (item) =>
+                  item.invoiceNumber === invoice
+              );
+
+            if (sale) {
+              showInvoice(sale);
+            }
+
+          }
+        );
+
+      });
+  }
 
   function searchSales(event) {
-
     const search =
       event.target.value
         .trim()
         .toLowerCase();
 
-    const sales =
-      getSales();
+    const sales = getSales();
 
-    const filtered =
-      sales.filter(
-        (sale) => {
+    const filtered = sales.filter(
+      (sale) => {
 
-          const invoice =
-            String(
-              sale.invoiceNumber
-            ).toLowerCase();
+        const invoice =
+          String(
+            sale.invoiceNumber
+          ).toLowerCase();
 
-          const payment =
-            String(
-              sale.paymentMethod
-            ).toLowerCase();
+        const payment =
+          String(
+            sale.paymentMethod
+          ).toLowerCase();
 
-          const products =
-            sale.items
-              .map(
-                (item) =>
-                  item.name
-              )
-              .join(" ")
-              .toLowerCase();
+        const products =
+          sale.items
+            .map(
+              (item) =>
+                String(item.name)
+            )
+            .join(" ")
+            .toLowerCase();
 
-          return (
-            invoice.includes(search) ||
-            payment.includes(search) ||
-            products.includes(search)
-          );
-        }
-      );
+        return (
+          invoice.includes(search) ||
+          payment.includes(search) ||
+          products.includes(search)
+        );
+      }
+    );
 
     const list =
       document.getElementById(
@@ -1396,9 +1404,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (list) {
       list.innerHTML =
-        renderSalesList(
-          filtered
-        );
+        renderSalesList(filtered);
     }
 
     const counter =
@@ -1408,46 +1414,591 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (counter) {
       counter.textContent =
-        filtered.length +
-        " فاتورة";
+        `${formatNumber(filtered.length)} فاتورة`;
     }
 
+    setupInvoiceButtons();
+  }
+
+  // =====================================================
+  // قسم المنتجات والمخزون
+  // =====================================================
+
+  function showProducts() {
+    const app =
+      document.querySelector(".app");
+
+    if (!app) return;
+
+    const products = getProducts();
+
+    app.innerHTML = `
+      <div class="page">
+
+        <div class="page-header">
+
+          <button
+            class="back-button"
+            id="backFromProducts"
+          >
+            ←
+          </button>
+
+          <div>
+            <h1>المنتجات والمخزون</h1>
+          </div>
+
+        </div>
+
+        <div class="form-card">
+
+          <input
+            id="productsSearch"
+            class="search-input"
+            type="search"
+            placeholder="🔎 ابحث عن منتج..."
+          >
+
+        </div>
+
+        <div class="stats">
+
+          <div class="stat">
+            <span>عدد المنتجات</span>
+            <strong>
+              ${formatNumber(products.length)}
+            </strong>
+          </div>
+
+          <div class="stat">
+            <span>قيمة المخزون</span>
+            <strong>
+              ${formatMoney(
+                products.reduce(
+                  (sum, product) =>
+                    sum +
+                    Number(product.price) *
+                      Number(product.stock),
+                  0
+                )
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        <div class="section">
+
+          <button
+            class="primary-button"
+            id="addProductButton"
+          >
+            ＋ إضافة منتج جديد
+          </button>
+
+        </div>
+
+        <div class="section">
+
+          <div class="section-heading">
+            <h3>قائمة المنتجات</h3>
+          </div>
+
+          <div
+            class="activity-list"
+            id="productsList"
+          >
+            ${renderProductsList(products)}
+          </div>
+
+        </div>
+
+      </div>
+
+      ${createBottomNavigation("products")}
+    `;
+
     document
-      .querySelectorAll(
-        "[data-open-invoice]"
+      .getElementById("backFromProducts")
+      ?.addEventListener(
+        "click",
+        showDashboard
+      );
+
+    document
+      .getElementById("addProductButton")
+      ?.addEventListener(
+        "click",
+        showAddProductForm
+      );
+
+    document
+      .getElementById("productsSearch")
+      ?.addEventListener(
+        "input",
+        searchProducts
+      );
+
+    setupProductButtons();
+    setupNavigation();
+  }
+
+  function renderProductsList(products) {
+    if (!products.length) {
+      return `
+        <div class="empty-state">
+          <span>📦</span>
+          <strong>لا توجد منتجات</strong>
+          <small>
+            أضف أول منتج إلى النظام.
+          </small>
+        </div>
+      `;
+    }
+
+    return products
+      .map(
+        (product) => {
+
+          const stock =
+            Number(product.stock || 0);
+
+          const minStock =
+            Number(product.minStock || 0);
+
+          const low =
+            stock <= minStock;
+
+          return `
+            <div class="sale-card product-management-card">
+
+              <div>
+
+                <strong>
+                  ${product.name}
+                </strong>
+
+                <small>
+                  السعر:
+                  ${formatMoney(product.price)}
+                </small>
+
+                <small>
+                  المخزون:
+                  ${formatNumber(stock)}
+                  ${low ? " ⚠️ منخفض" : ""}
+                </small>
+
+                <small>
+                  الحد الأدنى:
+                  ${formatNumber(minStock)}
+                </small>
+
+              </div>
+
+              <div
+                style="
+                  display:flex;
+                  gap:6px;
+                  flex-wrap:wrap;
+                  justify-content:flex-end;
+                "
+              >
+
+                <button
+                  class="secondary-button"
+                  data-product-action="edit"
+                  data-product-id="${product.id}"
+                  style="width:auto;padding:8px 12px;"
+                >
+                  ✏️ تعديل
+                </button>
+
+                <button
+                  class="danger-button"
+                  data-product-action="delete"
+                  data-product-id="${product.id}"
+                  style="width:auto;padding:8px 12px;"
+                >
+                  🗑️ حذف
+                </button>
+
+              </div>
+
+            </div>
+          `;
+        }
       )
+      .join("");
+  }
+
+  // =====================================================
+  // إضافة منتج
+  // =====================================================
+
+  function showAddProductForm() {
+    const app =
+      document.querySelector(".app");
+
+    if (!app) return;
+
+    app.innerHTML = `
+      <div class="page">
+
+        <div class="page-header">
+
+          <button
+            class="back-button"
+            id="backFromAddProduct"
+          >
+            ←
+          </button>
+
+          <div>
+            <h1>إضافة منتج</h1>
+          </div>
+
+        </div>
+
+        <div class="form-card">
+
+          <label>اسم المنتج</label>
+
+          <input
+            id="newProductName"
+            class="search-input"
+            type="text"
+            placeholder="مثال: شوكولاتة"
+          >
+
+          <label style="display:block;margin-top:15px;">
+            السعر
+          </label>
+
+          <input
+            id="newProductPrice"
+            class="search-input"
+            type="number"
+            min="0"
+            placeholder="السعر بالليرة السورية"
+          >
+
+          <label style="display:block;margin-top:15px;">
+            كمية المخزون
+          </label>
+
+          <input
+            id="newProductStock"
+            class="search-input"
+            type="number"
+            min="0"
+            value="0"
+          >
+
+          <label style="display:block;margin-top:15px;">
+            حد التنبيه
+          </label>
+
+          <input
+            id="newProductMinStock"
+            class="search-input"
+            type="number"
+            min="0"
+            value="5"
+          >
+
+          <button
+            class="primary-button"
+            id="saveNewProduct"
+            style="margin-top:18px;"
+          >
+            💾 حفظ المنتج
+          </button>
+
+        </div>
+
+      </div>
+
+      ${createBottomNavigation("products")}
+    `;
+
+    document
+      .getElementById("backFromAddProduct")
+      ?.addEventListener(
+        "click",
+        showProducts
+      );
+
+    document
+      .getElementById("saveNewProduct")
+      ?.addEventListener(
+        "click",
+        saveNewProduct
+      );
+
+    setupNavigation();
+  }
+
+  function saveNewProduct() {
+    const name =
+      document
+        .getElementById("newProductName")
+        ?.value.trim();
+
+    const price =
+      Number(
+        document
+          .getElementById("newProductPrice")
+          ?.value
+      );
+
+    const stock =
+      Number(
+        document
+          .getElementById("newProductStock")
+          ?.value
+      );
+
+    const minStock =
+      Number(
+        document
+          .getElementById("newProductMinStock")
+          ?.value
+      );
+
+    if (!name) {
+      alert("اكتب اسم المنتج.");
+      return;
+    }
+
+    if (price < 0 || Number.isNaN(price)) {
+      alert("أدخل سعرًا صحيحًا.");
+      return;
+    }
+
+    if (stock < 0 || Number.isNaN(stock)) {
+      alert("أدخل كمية مخزون صحيحة.");
+      return;
+    }
+
+    const products = getProducts();
+
+    products.push({
+      id: generateProductId(),
+      name: name,
+      price: price,
+      stock: stock,
+      minStock:
+        minStock >= 0
+          ? minStock
+          : 5
+    });
+
+    saveProducts(products);
+
+    alert("تم حفظ المنتج بنجاح.");
+
+    showProducts();
+  }
+
+  // =====================================================
+  // تعديل المنتج
+  // =====================================================
+
+  function editProduct(productId) {
+    const products = getProducts();
+
+    const product = products.find(
+      (item) =>
+        Number(item.id) ===
+        Number(productId)
+    );
+
+    if (!product) {
+      alert("لم يتم العثور على المنتج.");
+      return;
+    }
+
+    const name = prompt(
+      "اسم المنتج:",
+      product.name
+    );
+
+    if (name === null) return;
+
+    const priceInput = prompt(
+      "السعر بالليرة السورية:",
+      product.price
+    );
+
+    if (priceInput === null) return;
+
+    const stockInput = prompt(
+      "كمية المخزون:",
+      product.stock
+    );
+
+    if (stockInput === null) return;
+
+    const minStockInput = prompt(
+      "حد التنبيه:",
+      product.minStock
+    );
+
+    if (minStockInput === null) return;
+
+    const price = Number(priceInput);
+    const stock = Number(stockInput);
+    const minStock = Number(minStockInput);
+
+    if (!name.trim()) {
+      alert("اسم المنتج مطلوب.");
+      return;
+    }
+
+    if (
+      Number.isNaN(price) ||
+      price < 0
+    ) {
+      alert("السعر غير صحيح.");
+      return;
+    }
+
+    if (
+      Number.isNaN(stock) ||
+      stock < 0
+    ) {
+      alert("المخزون غير صحيح.");
+      return;
+    }
+
+    if (
+      Number.isNaN(minStock) ||
+      minStock < 0
+    ) {
+      alert("حد التنبيه غير صحيح.");
+      return;
+    }
+
+    product.name = name.trim();
+    product.price = price;
+    product.stock = stock;
+    product.minStock = minStock;
+
+    saveProducts(products);
+
+    alert("تم تعديل المنتج.");
+
+    showProducts();
+  }
+
+  // =====================================================
+  // حذف المنتج
+  // =====================================================
+
+  function deleteProduct(productId) {
+    const products = getProducts();
+
+    const product = products.find(
+      (item) =>
+        Number(item.id) ===
+        Number(productId)
+    );
+
+    if (!product) return;
+
+    const confirmed = confirm(
+      `هل تريد حذف المنتج "${product.name}"؟`
+    );
+
+    if (!confirmed) return;
+
+    const filtered =
+      products.filter(
+        (item) =>
+          Number(item.id) !==
+          Number(productId)
+      );
+
+    saveProducts(filtered);
+
+    alert("تم حذف المنتج.");
+
+    showProducts();
+  }
+
+  function setupProductButtons() {
+    document
+      .querySelectorAll("[data-product-action]")
       .forEach((button) => {
 
         button.addEventListener(
           "click",
           () => {
 
-            const invoice =
-              button.dataset
-                .openInvoice;
-
-            const sale =
-              getSales().find(
-                (item) =>
-                  item.invoiceNumber ===
-                  invoice
+            const id =
+              Number(
+                button.dataset.productId
               );
 
-            if (sale) {
-              showInvoice(sale);
+            const action =
+              button.dataset.productAction;
+
+            if (action === "edit") {
+              editProduct(id);
             }
+
+            if (action === "delete") {
+              deleteProduct(id);
+            }
+
           }
         );
 
       });
   }
 
-  // =========================================
-  // شريط التنقل
-  // =========================================
+  // =====================================================
+  // البحث عن المنتجات في الإدارة
+  // =====================================================
+
+  function searchProducts(event) {
+    const search =
+      event.target.value
+        .trim()
+        .toLowerCase();
+
+    const products =
+      getProducts();
+
+    const filtered =
+      products.filter(
+        (product) =>
+          product.name
+            .toLowerCase()
+            .includes(search)
+      );
+
+    const list =
+      document.getElementById(
+        "productsList"
+      );
+
+    if (list) {
+      list.innerHTML =
+        renderProductsList(
+          filtered
+        );
+    }
+
+    setupProductButtons();
+  }
+
+  // =====================================================
+  // التنقل السفلي
+  // =====================================================
 
   function createBottomNavigation(active) {
-
     return `
       <nav class="bottom-nav">
 
@@ -1488,7 +2039,11 @@ document.addEventListener("DOMContentLoaded", () => {
         </button>
 
         <button
-          class="nav-item"
+          class="nav-item ${
+            active === "products"
+              ? "active"
+              : ""
+          }"
           data-nav="products"
         >
           <span>📦</span>
@@ -1497,7 +2052,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
         <button
           class="nav-item"
-          data-nav="more"
+          data-nav="home"
         >
           <span>☰</span>
           <small>المزيد</small>
@@ -1508,11 +2063,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function setupNavigation() {
-
     document
-      .querySelectorAll(
-        "[data-nav]"
-      )
+      .querySelectorAll("[data-nav]")
       .forEach((button) => {
 
         button.addEventListener(
@@ -1526,32 +2078,16 @@ document.addEventListener("DOMContentLoaded", () => {
               showDashboard();
             }
 
-            else if (
-              page === "sales"
-            ) {
+            else if (page === "sales") {
               showSalesHistory();
             }
 
-            else if (
-              page === "sale"
-            ) {
+            else if (page === "sale") {
               showSalesScreen();
             }
 
-            else if (
-              page === "products"
-            ) {
-              alert(
-                "قسم المنتجات جاهز للتطوير."
-              );
-            }
-
-            else if (
-              page === "more"
-            ) {
-              alert(
-                "المزيد من خيارات النظام."
-              );
+            else if (page === "products") {
+              showProducts();
             }
 
           }
@@ -1560,1446 +2096,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
   }
 
-  // =========================================
-  // بدء التطبيق
-  // =========================================
+  // =====================================================
+  // تشغيل النظام
+  // =====================================================
 
   showDashboard();
-});];
-
-
-let cart = [];
-
-
-document.addEventListener("DOMContentLoaded", function () {
-
-  initializeStorage();
-
-  bindNavigation();
-
-  updateDashboard();
-
 });
-
-
-function initializeStorage() {
-
-  if (!localStorage.getItem(STORAGE.products)) {
-
-    localStorage.setItem(
-      STORAGE.products,
-      JSON.stringify(DEFAULT_PRODUCTS)
-    );
-
-  }
-
-}
-
-
-function getSales() {
-
-  try {
-
-    const value =
-      localStorage.getItem(STORAGE.sales);
-
-    return value
-      ? JSON.parse(value)
-      : [];
-
-  } catch {
-
-    return [];
-
-  }
-
-}
-
-
-function saveSales(sales) {
-
-  localStorage.setItem(
-    STORAGE.sales,
-    JSON.stringify(sales)
-  );
-
-}
-
-
-function getProducts() {
-
-  try {
-
-    return JSON.parse(
-      localStorage.getItem(STORAGE.products) || "[]"
-    );
-
-  } catch {
-
-    return [];
-
-  }
-
-}
-
-
-function saveProducts(products) {
-
-  localStorage.setItem(
-    STORAGE.products,
-    JSON.stringify(products)
-  );
-
-}
-
-
-function money(value) {
-
-  return Number(value || 0).toLocaleString("ar-SY");
-
-}
-
-
-function todayString() {
-
-  const d = new Date();
-
-  return d.toLocaleDateString("ar-SY");
-
-}
-
-
-/* =========================
-   التنقل
-========================= */
-
-function bindNavigation() {
-
-  document
-    .getElementById("newSaleButton")
-    .onclick = showSales;
-
-  document
-    .getElementById("sellNav")
-    .onclick = showSales;
-
-  document
-    .getElementById("salesNav")
-    .onclick = showSalesHistory;
-
-  document
-    .getElementById("viewAllSales")
-    .onclick = showSalesHistory;
-
-  document
-    .getElementById("productsNav")
-    .onclick = showProducts;
-
-  document
-    .getElementById("newProductButton")
-    .onclick = showAddProduct;
-
-  document
-    .getElementById("inventoryButton")
-    .onclick = showProducts;
-
-  document
-    .getElementById("newCustomerButton")
-    .onclick = showCustomers;
-
-  document
-    .getElementById("homeNav")
-    .onclick = function () {
-      location.reload();
-    };
-
-  document
-    .getElementById("moreNav")
-    .onclick = function () {
-      alert("المزيد من إعدادات النظام ستضاف لاحقًا.");
-    };
-
-}
-
-
-/* =========================
-   لوحة التحكم
-========================= */
-
-function updateDashboard() {
-
-  const sales = getSales();
-
-  const today = todayString();
-
-  const todaySales =
-    sales.filter(sale => sale.date === today);
-
-  const total =
-    todaySales.reduce(
-      (sum, sale) => sum + Number(sale.total || 0),
-      0
-    );
-
-  const profit =
-    todaySales.reduce(
-      (sum, sale) => sum + Number(sale.profit || 0),
-      0
-    );
-
-  const products = getProducts();
-
-  document.getElementById("todaySales").textContent =
-    money(total);
-
-  document.getElementById("todayInvoices").textContent =
-    money(todaySales.length);
-
-  document.getElementById("todayProfit").textContent =
-    money(profit);
-
-  document.getElementById("stockCount").textContent =
-    money(products.length);
-
-  renderRecentSales(todaySales);
-
-}
-
-
-function renderRecentSales(sales) {
-
-  const box =
-    document.getElementById("recentActivity");
-
-
-  if (!sales.length) {
-
-    box.innerHTML = `
-      <div class="empty-state">
-        <span>🧾</span>
-        <strong>لا توجد عمليات بعد</strong>
-        <small>
-          ستظهر المبيعات هنا بعد إنشاء أول فاتورة.
-        </small>
-      </div>
-    `;
-
-    return;
-
-  }
-
-
-  box.innerHTML =
-    sales
-      .slice()
-      .reverse()
-      .slice(0, 5)
-      .map(sale => `
-
-        <div class="sale-card">
-
-          <div>
-            <strong>
-              ${sale.invoiceNumber}
-            </strong>
-
-            <small>
-              ${sale.time} · ${sale.payment}
-            </small>
-          </div>
-
-          <div class="sale-total">
-            ${money(sale.total)} ل.س
-          </div>
-
-        </div>
-
-      `)
-      .join("");
-
-}
-
-
-/* =========================
-   شاشة البيع
-========================= */
-
-function showSales() {
-
-  cart = [];
-
-  const products =
-    getProducts();
-
-  const app =
-    document.getElementById("app");
-
-
-  app.innerHTML = `
-
-    <main class="page">
-
-      <div class="page-header">
-
-        <button
-          class="back-button"
-          id="back"
-        >
-          → 
-        </button>
-
-        <h1>
-          بيع جديد
-        </h1>
-
-      </div>
-
-
-      <input
-        class="search-input"
-        id="productSearch"
-        placeholder="ابحث عن منتج..."
-      >
-
-
-      <div
-        class="products-grid"
-        id="productsGrid"
-        style="margin-top:15px"
-      >
-
-        ${products.map(product => `
-
-          <button
-            class="product-button"
-            data-id="${product.id}"
-          >
-
-            <strong>
-              ${product.name}
-            </strong>
-
-            <small>
-              ${money(product.price)} ل.س
-            </small>
-
-          </button>
-
-        `).join("")}
-
-      </div>
-
-
-      <div class="cart">
-
-        <div class="section-heading">
-          <h3>السلة</h3>
-          <span id="cartCount">0 منتجات</span>
-        </div>
-
-        <div
-          class="form-card"
-          id="cartItems"
-        >
-          السلة فارغة
-        </div>
-
-        <div class="total-box">
-
-          <span>
-            الإجمالي
-          </span>
-
-          <strong>
-            <span id="cartTotal">0</span>
-            ل.س
-          </strong>
-
-        </div>
-
-
-        <button
-          class="primary-button"
-          id="completeSale"
-          style="margin-top:15px"
-        >
-          إتمام البيع
-        </button>
-
-      </div>
-
-    </main>
-
-  `;
-
-
-  document
-    .getElementById("back")
-    .onclick = function () {
-      location.reload();
-    };
-
-
-  document
-    .querySelectorAll(".product-button")
-    .forEach(button => {
-
-      button.onclick = function () {
-
-        const id =
-          Number(this.dataset.id);
-
-        addToCart(id);
-
-      };
-
-    });
-
-
-  document
-    .getElementById("productSearch")
-    .oninput = function () {
-
-      const value =
-        this.value.toLowerCase();
-
-      document
-        .querySelectorAll(".product-button")
-        .forEach(button => {
-
-          const product =
-            products.find(
-              p => p.id === Number(button.dataset.id)
-            );
-
-          button.style.display =
-            product.name
-              .toLowerCase()
-              .includes(value)
-              ? ""
-              : "none";
-
-        });
-
-    };
-
-
-  document
-    .getElementById("completeSale")
-    .onclick = function () {
-
-      if (!cart.length) {
-
-        alert("أضف منتجًا إلى السلة أولًا.");
-
-        return;
-
-      }
-
-      showInvoice();
-
-    };
-
-}
-
-
-function addToCart(id) {
-
-  const product =
-    getProducts().find(
-      p => p.id === id
-    );
-
-
-  if (!product) return;
-
-
-  const existing =
-    cart.find(
-      item => item.id === id
-    );
-
-
-  if (existing) {
-
-    if (existing.qty >= product.stock) {
-
-      alert("الكمية المطلوبة غير متوفرة في المخزون.");
-
-      return;
-
-    }
-
-    existing.qty++;
-
-  } else {
-
-    cart.push({
-      id: product.id,
-      name: product.name,
-      price: product.price,
-      cost: product.cost,
-      qty: 1
-    });
-
-  }
-
-
-  renderCart();
-
-}
-
-
-function renderCart() {
-
-  const box =
-    document.getElementById("cartItems");
-
-
-  if (!cart.length) {
-
-    box.innerHTML =
-      "السلة فارغة";
-
-    document.getElementById("cartTotal").textContent =
-      "0";
-
-    return;
-
-  }
-
-
-  let total = 0;
-
-
-  box.innerHTML =
-    cart.map((item, index) => {
-
-      const itemTotal =
-        item.price * item.qty;
-
-      total += itemTotal;
-
-
-      return `
-
-        <div class="cart-item">
-
-          <div>
-
-            <strong>
-              ${item.name}
-            </strong>
-
-            <small>
-              ${item.qty} × ${money(item.price)} ل.س
-            </small>
-
-          </div>
-
-          <strong>
-            ${money(itemTotal)} ل.س
-          </strong>
-
-        </div>
-
-      `;
-
-    }).join("");
-
-
-  document.getElementById("cartTotal").textContent =
-    money(total);
-
-  document.getElementById("cartCount").textContent =
-    `${cart.length} منتجات`;
-
-}
-
-
-/* =========================
-   الفاتورة
-========================= */
-
-function showInvoice() {
-
-  const products =
-    getProducts();
-
-  const now =
-    new Date();
-
-  const invoiceNumber =
-    "INV-" + Date.now();
-
-  const date =
-    now.toLocaleDateString("ar-SY");
-
-  const time =
-    now.toLocaleTimeString(
-      "ar-SY",
-      {
-        hour: "2-digit",
-        minute: "2-digit"
-      }
-    );
-
-
-  const total =
-    cart.reduce(
-      (sum, item) =>
-        sum + item.price * item.qty,
-      0
-    );
-
-
-  const profit =
-    cart.reduce(
-      (sum, item) =>
-        sum +
-        ((item.price - item.cost) * item.qty),
-      0
-    );
-
-
-  const app =
-    document.getElementById("app");
-
-
-  app.innerHTML = `
-
-    <main class="page">
-
-      <div class="page-header no-print">
-
-        <button
-          class="back-button"
-          id="invoiceBack"
-        >
-          →
-        </button>
-
-        <h1>
-          الفاتورة
-        </h1>
-
-      </div>
-
-
-      <div class="invoice">
-
-        <div class="invoice-header">
-
-          <h1>
-            سوبر ماركت البرج
-          </h1>
-
-          <strong>
-            فاتورة بيع
-          </strong>
-
-          <p>
-            الليرة السورية
-          </p>
-
-        </div>
-
-
-        <div class="invoice-meta">
-
-          <div>
-            رقم الفاتورة:
-            <strong>
-              ${invoiceNumber}
-            </strong>
-          </div>
-
-          <div>
-            التاريخ:
-            ${date}
-          </div>
-
-          <div>
-            الوقت:
-            ${time}
-          </div>
-
-        </div>
-
-
-        <table class="invoice-table">
-
-          <thead>
-
-            <tr>
-              <th>المنتج</th>
-              <th>الكمية</th>
-              <th>السعر</th>
-              <th>المجموع</th>
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            ${cart.map(item => `
-
-              <tr>
-
-                <td>
-                  ${item.name}
-                </td>
-
-                <td>
-                  ${item.qty}
-                </td>
-
-                <td>
-                  ${money(item.price)}
-                </td>
-
-                <td>
-                  ${money(item.price * item.qty)}
-                </td>
-
-              </tr>
-
-            `).join("")}
-
-          </tbody>
-
-        </table>
-
-
-        <div class="invoice-total">
-
-          <strong>
-            الإجمالي
-          </strong>
-
-          <h2>
-            ${money(total)} ل.س
-          </h2>
-
-        </div>
-
-
-        <div class="field no-print" style="margin-top:18px">
-
-          <label>
-            طريقة الدفع
-          </label>
-
-          <select id="paymentMethod">
-
-            <option value="نقدي">
-              نقدي
-            </option>
-
-            <option value="بطاقة">
-              بطاقة
-            </option>
-
-          </select>
-
-        </div>
-
-
-        <button
-          class="primary-button no-print"
-          id="saveInvoice"
-        >
-          حفظ الفاتورة
-        </button>
-
-
-        <button
-          class="secondary-button no-print"
-          id="printInvoice"
-          style="margin-top:10px"
-        >
-          طباعة الفاتورة
-        </button>
-
-
-        <button
-          class="secondary-button no-print"
-          id="newSale"
-          style="margin-top:10px"
-        >
-          بيع جديد
-        </button>
-
-      </div>
-
-    </main>
-
-  `;
-
-
-  document
-    .getElementById("invoiceBack")
-    .onclick = showSales;
-
-
-  document
-    .getElementById("printInvoice")
-    .onclick = function () {
-
-      window.print();
-
-    };
-
-
-  document
-    .getElementById("newSale")
-    .onclick = showSales;
-
-
-  document
-    .getElementById("saveInvoice")
-    .onclick = function () {
-
-      const payment =
-        document.getElementById("paymentMethod").value;
-
-
-      const sales =
-        getSales();
-
-
-      const sale = {
-
-        invoiceNumber,
-
-        date,
-
-        time,
-
-        items: cart.map(item => ({
-          ...item
-        })),
-
-        total,
-
-        profit,
-
-        payment
-
-      };
-
-
-      sales.push(sale);
-
-      saveSales(sales);
-
-
-      updateStockAfterSale();
-
-
-      this.textContent =
-        "تم حفظ الفاتورة ✓";
-
-      this.disabled = true;
-
-      this.classList.remove(
-        "primary-button"
-      );
-
-      this.classList.add(
-        "secondary-button"
-      );
-
-
-      alert("تم حفظ الفاتورة بنجاح.");
-
-    };
-
-}
-
-
-function updateStockAfterSale() {
-
-  const products =
-    getProducts();
-
-
-  cart.forEach(item => {
-
-    const product =
-      products.find(
-        p => p.id === item.id
-      );
-
-
-    if (product) {
-
-      product.stock =
-        Math.max(
-          0,
-          product.stock - item.qty
-        );
-
-    }
-
-  });
-
-
-  saveProducts(products);
-
-}
-
-
-/* =========================
-   المبيعات
-========================= */
-
-function showSalesHistory() {
-
-  const sales =
-    getSales();
-
-
-  const app =
-    document.getElementById("app");
-
-
-  const total =
-    sales.reduce(
-      (sum, sale) =>
-        sum + Number(sale.total || 0),
-      0
-    );
-
-
-  app.innerHTML = `
-
-    <main class="page">
-
-      <div class="page-header">
-
-        <button
-          class="back-button"
-          id="back"
-        >
-          →
-        </button>
-
-        <h1>
-          المبيعات
-        </h1>
-
-      </div>
-
-
-      <div class="stats">
-
-        <div class="stat">
-
-          <span>
-            عدد الفواتير
-          </span>
-
-          <strong>
-            ${money(sales.length)}
-          </strong>
-
-          <small>
-            فاتورة
-          </small>
-
-        </div>
-
-
-        <div class="stat">
-
-          <span>
-            إجمالي المبيعات
-          </span>
-
-          <strong>
-            ${money(total)}
-          </strong>
-
-          <small>
-            ل.س
-          </small>
-
-        </div>
-
-      </div>
-
-
-      <section class="section">
-
-        <div class="section-heading">
-          <h3>سجل الفواتير</h3>
-        </div>
-
-
-        <div class="activity-list">
-
-          ${
-            sales.length
-            ? sales.slice().reverse().map(sale => `
-
-              <div class="sale-card">
-
-                <div>
-
-                  <strong>
-                    ${sale.invoiceNumber}
-                  </strong>
-
-                  <small>
-                    ${sale.date} · ${sale.time}
-                  </small>
-
-                  <small>
-                    ${sale.payment}
-                  </small>
-
-                </div>
-
-                <div class="sale-total">
-                  ${money(sale.total)} ل.س
-                </div>
-
-              </div>
-
-            `).join("")
-            : `
-              <div class="empty-state">
-
-                <span>🧾</span>
-
-                <strong>
-                  لا توجد مبيعات
-                </strong>
-
-                <small>
-                  أنشئ أول فاتورة لتظهر هنا.
-                </small>
-
-              </div>
-            `
-          }
-
-        </div>
-
-      </section>
-
-    </main>
-
-  `;
-
-
-  document
-    .getElementById("back")
-    .onclick = function () {
-
-      location.reload();
-
-    };
-
-}
-
-
-/* =========================
-   المنتجات
-========================= */
-
-function showProducts() {
-
-  const products =
-    getProducts();
-
-
-  const app =
-    document.getElementById("app");
-
-
-  app.innerHTML = `
-
-    <main class="page">
-
-      <div class="page-header">
-
-        <button
-          class="back-button"
-          onclick="location.reload()"
-        >
-          →
-        </button>
-
-        <h1>
-          المنتجات والمخزون
-        </h1>
-
-      </div>
-
-
-      <button
-        class="primary-button"
-        id="addProduct"
-      >
-        ＋ إضافة منتج
-      </button>
-
-
-      <div
-        class="activity-list"
-        style="margin-top:15px"
-      >
-
-        ${
-          products.map(product => `
-
-            <div class="product-card">
-
-              <strong>
-                ${product.name}
-              </strong>
-
-              <p>
-                سعر البيع:
-                ${money(product.price)} ل.س
-              </p>
-
-              <p>
-                المخزون:
-                ${money(product.stock)}
-              </p>
-
-            </div>
-
-          `).join("")
-        }
-
-      </div>
-
-    </main>
-
-  `;
-
-
-  document
-    .getElementById("addProduct")
-    .onclick = showAddProduct;
-
-}
-
-
-/* =========================
-   إضافة منتج
-========================= */
-
-function showAddProduct() {
-
-  const app =
-    document.getElementById("app");
-
-
-  app.innerHTML = `
-
-    <main class="page">
-
-      <div class="page-header">
-
-        <button
-          class="back-button"
-          onclick="showProducts()"
-        >
-          →
-        </button>
-
-        <h1>
-          منتج جديد
-        </h1>
-
-      </div>
-
-
-      <div class="form-card">
-
-        <div class="field">
-
-          <label>
-            اسم المنتج
-          </label>
-
-          <input
-            id="productName"
-            placeholder="مثال: مياه"
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            سعر البيع
-          </label>
-
-          <input
-            id="productPrice"
-            type="number"
-            placeholder="0"
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            سعر التكلفة
-          </label>
-
-          <input
-            id="productCost"
-            type="number"
-            placeholder="0"
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            الكمية
-          </label>
-
-          <input
-            id="productStock"
-            type="number"
-            placeholder="0"
-          >
-
-        </div>
-
-
-        <button
-          class="primary-button"
-          id="saveProduct"
-        >
-          حفظ المنتج
-        </button>
-
-      </div>
-
-    </main>
-
-  `;
-
-
-  document
-    .getElementById("saveProduct")
-    .onclick = function () {
-
-      const name =
-        document.getElementById("productName").value.trim();
-
-      const price =
-        Number(
-          document.getElementById("productPrice").value
-        );
-
-      const cost =
-        Number(
-          document.getElementById("productCost").value
-        );
-
-      const stock =
-        Number(
-          document.getElementById("productStock").value
-        );
-
-
-      if (!name || !price) {
-
-        alert("أدخل اسم المنتج وسعر البيع.");
-
-        return;
-
-      }
-
-
-      const products =
-        getProducts();
-
-
-      products.push({
-
-        id: Date.now(),
-
-        name,
-
-        price,
-
-        cost,
-
-        stock
-
-      });
-
-
-      saveProducts(products);
-
-
-      alert("تم حفظ المنتج.");
-
-      showProducts();
-
-    };
-
-}
-
-
-/* =========================
-   العملاء
-========================= */
-
-function showCustomers() {
-
-  const app =
-    document.getElementById("app");
-
-
-  app.innerHTML = `
-
-    <main class="page">
-
-      <div class="page-header">
-
-        <button
-          class="back-button"
-          onclick="location.reload()"
-        >
-          →
-        </button>
-
-        <h1>
-          العملاء
-        </h1>
-
-      </div>
-
-
-      <div class="form-card">
-
-        <div class="field">
-
-          <label>
-            اسم العميل
-          </label>
-
-          <input
-            id="customerName"
-            placeholder="اسم العميل"
-          >
-
-        </div>
-
-
-        <div class="field">
-
-          <label>
-            رقم الهاتف
-          </label>
-
-          <input
-            id="customerPhone"
-            type="tel"
-            placeholder="رقم الهاتف"
-          >
-
-        </div>
-
-
-        <button
-          class="primary-button"
-          id="saveCustomer"
-        >
-          حفظ العميل
-        </button>
-
-      </div>
-
-    </main>
-
-  `;
-
-
-  document
-    .getElementById("saveCustomer")
-    .onclick = function () {
-
-      const name =
-        document
-          .getElementById("customerName")
-          .value
-          .trim();
-
-
-      const phone =
-        document
-          .getElementById("customerPhone")
-          .value
-          .trim();
-
-
-      if (!name) {
-
-        alert("أدخل اسم العميل.");
-
-        return;
-
-      }
-
-
-      let customers = [];
-
-
-      try {
-
-        customers =
-          JSON.parse(
-            localStorage.getItem(
-              STORAGE.customers
-            ) || "[]"
-          );
-
-      } catch {
-
-        customers = [];
-
-      }
-
-
-      customers.push({
-
-        id: Date.now(),
-
-        name,
-
-        phone
-
-      });
-
-
-      localStorage.setItem(
-        STORAGE.customers,
-        JSON.stringify(customers)
-      );
-
-
-      alert("تم حفظ العميل.");
-
-      location.reload();
-
-    };
-
-    }
