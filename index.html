@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#090806">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>البرج</title>
+<link rel="manifest" href="manifest.json">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="app">
+<header class="topbar">
+  <div><span class="kicker">نظام البرج</span><h1>لوحة التحكم</h1></div>
+  <button class="bell">♢</button>
+</header>
+
+<section class="hero">
+  <div><span>أهلًا بك</span><h2>سوبر ماركت البرج</h2><p>إدارة مبيعاتك ومخزونك من مكان واحد.</p></div>
+  <div class="seal">AL<br>BURJ</div>
+</section>
+
+<section class="stats">
+  <div class="stat"><span>مبيعات اليوم</span><b>0.00</b><small>ريال</small></div>
+  <div class="stat"><span>الفواتير</span><b>0</b><small>فاتورة</small></div>
+  <div class="stat"><span>الأرباح</span><b>0.00</b><small>ريال</small></div>
+  <div class="stat"><span>المخزون</span><b>0</b><small>تنبيه</small></div>
+</section>
+
+<section class="quick">
+  <div class="title"><h3>اختصارات</h3><span>اليوم</span></div>
+  <div class="quickgrid">
+    <button><strong>＋</strong><span>بيع جديد</span></button>
+    <button><strong>＋</strong><span>منتج جديد</span></button>
+    <button><strong>♧</strong><span>عميل جديد</span></button>
+    <button><strong>▥</strong><span>جرد المخزون</span></button>
+  </div>
+</section>
+
+<section class="activity">
+  <div class="title"><h3>آخر العمليات</h3></div>
+  <div class="empty">لا توجد عمليات بعد</div>
+</section>
+
+<nav class="bottom">
+  <button class="active">⌂<small>الرئيسية</small></button>
+  <button>▣<small>المبيعات</small></button>
+  <button class="sell">＋<small>بيع</small></button>
+  <button>□<small>المنتجات</small></button>
+  <button>☰<small>المزيد</small></button>
+</nav>
+</div>
+<script>
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js");
+</script>
+</body>
+</html>
