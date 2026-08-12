@@ -1,40 +1,1571 @@
-const STORAGE = {
-  sales: "alburj_sales",
-  products: "alburj_products",
-  customers: "alburj_customers"
-};
+document.addEventListener("DOMContentLoaded", () => {
+  // =========================================
+  // إعدادات عامة
+  // =========================================
 
+  const CURRENCY = "ل.س";
+  const STORAGE_KEY = "alburj_sales";
+  const PRODUCTS_KEY = "alburj_products";
 
-const DEFAULT_PRODUCTS = [
-  {
-    id: 1,
-    name: "مياه البرج",
-    price: 1500,
-    cost: 1000,
-    stock: 50
-  },
-  {
-    id: 2,
-    name: "عصير برتقال",
-    price: 5000,
-    cost: 3500,
-    stock: 30
-  },
-  {
-    id: 3,
-    name: "خبز",
-    price: 2000,
-    cost: 1200,
-    stock: 40
-  },
-  {
-    id: 4,
-    name: "حليب",
-    price: 7000,
-    cost: 5000,
-    stock: 25
+  let cart = [];
+
+  // =========================================
+  // المنتجات الافتراضية
+  // =========================================
+
+  const defaultProducts = [
+    {
+      id: 1,
+      name: "عصير برتقال",
+      price: 5000
+    },
+    {
+      id: 2,
+      name: "مياه معدنية",
+      price: 2000
+    },
+    {
+      id: 3,
+      name: "بيبسي",
+      price: 4000
+    },
+    {
+      id: 4,
+      name: "شيبس",
+      price: 3500
+    },
+    {
+      id: 5,
+      name: "بسكويت",
+      price: 3000
+    },
+    {
+      id: 6,
+      name: "حليب",
+      price: 6000
+    }
+  ];
+
+  // =========================================
+  // أدوات مساعدة
+  // =========================================
+
+  function getSales() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (error) {
+      console.error("خطأ في قراءة المبيعات:", error);
+      return [];
+    }
   }
-];
+
+  function saveSales(sales) {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify(sales)
+    );
+  }
+
+  function getProducts() {
+    try {
+      const saved = JSON.parse(
+        localStorage.getItem(PRODUCTS_KEY)
+      );
+
+      return saved && Array.isArray(saved)
+        ? saved
+        : defaultProducts;
+    } catch (error) {
+      return defaultProducts;
+    }
+  }
+
+  function formatMoney(value) {
+    return Number(value || 0).toLocaleString("ar-SY") + " " + CURRENCY;
+  }
+
+  function formatDate(date) {
+    return new Date(date).toLocaleDateString("ar-SY");
+  }
+
+  function formatTime(date) {
+    return new Date(date).toLocaleTimeString("ar-SY", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function generateInvoiceNumber() {
+    return (
+      "INV-" +
+      Date.now() +
+      "-" +
+      Math.floor(Math.random() * 1000)
+    );
+  }
+
+  // =========================================
+  // لوحة التحكم
+  // =========================================
+
+  function showDashboard() {
+    const app = document.querySelector(".app");
+
+    if (!app) return;
+
+    const sales = getSales();
+
+    const today = new Date();
+
+    const todaySales = sales.filter((sale) => {
+      const saleDate = new Date(sale.createdAt);
+
+      return (
+        saleDate.getFullYear() === today.getFullYear() &&
+        saleDate.getMonth() === today.getMonth() &&
+        saleDate.getDate() === today.getDate()
+      );
+    });
+
+    const totalToday = todaySales.reduce(
+      (sum, sale) => sum + Number(sale.total || 0),
+      0
+    );
+
+    app.innerHTML = `
+      <div class="page">
+
+        <div class="topbar">
+          <div>
+            <span class="kicker">نظام نقاط البيع</span>
+            <h1>سوبر ماركت البرج</h1>
+          </div>
+
+          <button class="icon-button" id="refreshDashboard">
+            ↻
+          </button>
+        </div>
+
+        <div class="hero">
+          <div>
+            <span class="hero-label">إجمالي مبيعات اليوم</span>
+
+            <h2>
+              ${formatMoney(totalToday)}
+            </h2>
+
+            <p>
+              ${todaySales.length}
+              فاتورة مسجلة اليوم
+            </p>
+          </div>
+
+          <div class="seal">
+            AL<br>
+            BURJ
+          </div>
+        </div>
+
+        <div class="stats">
+
+          <div class="stat">
+            <span>مبيعات اليوم</span>
+            <strong>${formatMoney(totalToday)}</strong>
+            <small>الليرة السورية</small>
+          </div>
+
+          <div class="stat">
+            <span>فواتير اليوم</span>
+            <strong>${todaySales.length}</strong>
+            <small>فاتورة</small>
+          </div>
+
+          <div class="stat">
+            <span>كل المبيعات</span>
+            <strong>${sales.length}</strong>
+            <small>فاتورة</small>
+          </div>
+
+          <div class="stat">
+            <span>إجمالي المبيعات</span>
+            <strong>
+              ${formatMoney(
+                sales.reduce(
+                  (sum, sale) =>
+                    sum + Number(sale.total || 0),
+                  0
+                )
+              )}
+            </strong>
+            <small>ل.س</small>
+          </div>
+
+        </div>
+
+        <div class="section">
+
+          <div class="section-heading">
+            <h3>العمليات السريعة</h3>
+          </div>
+
+          <div class="quickgrid">
+
+            <button
+              class="quick-card"
+              id="newSaleButton"
+            >
+              <div class="quick-icon">🛒</div>
+
+              <strong>بيع جديد</strong>
+
+              <small>
+                إنشاء فاتورة جديدة
+              </small>
+            </button>
+
+            <button
+              class="quick-card"
+              id="salesHistoryButton"
+            >
+              <div class="quick-icon">📋</div>
+
+              <strong>سجل المبيعات</strong>
+
+              <small>
+                عرض جميع الفواتير
+              </small>
+            </button>
+
+            <button
+              class="quick-card"
+              id="productsButton"
+            >
+              <div class="quick-icon">📦</div>
+
+              <strong>المنتجات</strong>
+
+              <small>
+                إدارة المنتجات
+              </small>
+            </button>
+
+            <button
+              class="quick-card"
+              id="customersButton"
+            >
+              <div class="quick-icon">👤</div>
+
+              <strong>العملاء</strong>
+
+              <small>
+                إدارة العملاء
+              </small>
+            </button>
+
+          </div>
+
+        </div>
+
+        <div class="section">
+
+          <div class="section-heading">
+            <h3>آخر المبيعات</h3>
+
+            <button id="viewAllSales">
+              عرض الكل
+            </button>
+          </div>
+
+          <div class="activity-list">
+
+            ${
+              sales.length === 0
+                ? `
+                  <div class="empty-state">
+                    <span>🧾</span>
+                    <strong>لا توجد مبيعات بعد</strong>
+                    <small>
+                      عند إتمام أول عملية بيع ستظهر هنا.
+                    </small>
+                  </div>
+                `
+                : sales
+                    .slice()
+                    .reverse()
+                    .slice(0, 5)
+                    .map(createSaleCard)
+                    .join("")
+            }
+
+          </div>
+
+        </div>
+
+      </div>
+
+      ${createBottomNavigation("home")}
+    `;
+
+    document
+      .getElementById("newSaleButton")
+      ?.addEventListener("click", showSalesScreen);
+
+    document
+      .getElementById("salesHistoryButton")
+      ?.addEventListener("click", showSalesHistory);
+
+    document
+      .getElementById("viewAllSales")
+      ?.addEventListener("click", showSalesHistory);
+
+    document
+      .getElementById("refreshDashboard")
+      ?.addEventListener("click", showDashboard);
+
+    document
+      .getElementById("productsButton")
+      ?.addEventListener("click", () => {
+        alert("قسم المنتجات جاهز للتطوير.");
+      });
+
+    document
+      .getElementById("customersButton")
+      ?.addEventListener("click", () => {
+        alert("قسم العملاء جاهز للتطوير.");
+      });
+
+    setupNavigation();
+  }
+
+  // =========================================
+  // بطاقة بيع
+  // =========================================
+
+  function createSaleCard(sale) {
+    return `
+      <div
+        class="sale-card"
+        data-invoice="${sale.invoiceNumber}"
+      >
+
+        <div>
+          <strong>
+            ${sale.invoiceNumber}
+          </strong>
+
+          <small>
+            ${formatDate(sale.createdAt)}
+            -
+            ${formatTime(sale.createdAt)}
+          </small>
+
+          <small>
+            الدفع:
+            ${sale.paymentMethod || "نقدي"}
+          </small>
+        </div>
+
+        <div class="sale-total">
+          ${formatMoney(sale.total)}
+        </div>
+
+      </div>
+    `;
+  }
+
+  // =========================================
+  // شاشة البيع
+  // =========================================
+
+  function showSalesScreen() {
+    const app = document.querySelector(".app");
+
+    if (!app) return;
+
+    cart = [];
+
+    const products = getProducts();
+
+    app.innerHTML = `
+      <div class="page">
+
+        <div class="page-header">
+
+          <button
+            class="back-button"
+            id="backToDashboard"
+          >
+            ←
+          </button>
+
+          <div>
+            <h1>بيع جديد</h1>
+          </div>
+
+        </div>
+
+        <div class="form-card">
+
+          <input
+            id="productSearch"
+            class="search-input"
+            type="search"
+            placeholder="🔎 ابحث عن منتج..."
+          >
+
+        </div>
+
+        <div class="section">
+
+          <div class="section-heading">
+            <h3>المنتجات</h3>
+            <span>${products.length} منتج</span>
+          </div>
+
+          <div
+            class="products-grid"
+            id="productsGrid"
+          >
+
+            ${products
+              .map(
+                (product) => `
+                  <button
+                    class="product-button"
+                    data-id="${product.id}"
+                    data-name="${product.name}"
+                  >
+
+                    <strong>
+                      ${product.name}
+                    </strong>
+
+                    <small>
+                      ${Number(product.price).toLocaleString("ar-SY")}
+                      ${CURRENCY}
+                    </small>
+
+                  </button>
+                `
+              )
+              .join("")}
+
+          </div>
+
+        </div>
+
+        <div class="section cart">
+
+          <div class="section-heading">
+            <h3>السلة</h3>
+            <span id="cartCount">0 منتج</span>
+          </div>
+
+          <div
+            class="form-card"
+            id="cartContainer"
+          >
+            <div class="empty-state">
+              <span>🛒</span>
+              <strong>السلة فارغة</strong>
+              <small>
+                اضغط على أي منتج لإضافته.
+              </small>
+            </div>
+          </div>
+
+          <div
+            class="total-box"
+            id="totalBox"
+          >
+            <span>الإجمالي</span>
+
+            <strong id="totalElement">
+              0 ${CURRENCY}
+            </strong>
+          </div>
+
+          <div
+            style="
+              margin-top:15px;
+              display:grid;
+              gap:10px;
+            "
+          >
+
+            <button
+              class="primary-button"
+              id="completeSale"
+            >
+              ✓ إتمام البيع وحفظ الفاتورة
+            </button>
+
+            <button
+              class="secondary-button"
+              id="clearCart"
+            >
+              مسح السلة
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      ${createBottomNavigation("sale")}
+    `;
+
+    document
+      .getElementById("backToDashboard")
+      ?.addEventListener(
+        "click",
+        showDashboard
+      );
+
+    document
+      .querySelectorAll(".product-button")
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const id = Number(
+              button.dataset.id
+            );
+
+            const product =
+              products.find(
+                (item) =>
+                  Number(item.id) === id
+              );
+
+            if (product) {
+              addToCart(product);
+            }
+          }
+        );
+
+      });
+
+    document
+      .getElementById("productSearch")
+      ?.addEventListener(
+        "input",
+        filterProducts
+      );
+
+    document
+      .getElementById("completeSale")
+      ?.addEventListener(
+        "click",
+        completeSale
+      );
+
+    document
+      .getElementById("clearCart")
+      ?.addEventListener(
+        "click",
+        () => {
+
+          cart = [];
+
+          renderCart();
+
+        }
+      );
+
+    renderCart();
+
+    setupNavigation();
+  }
+
+  // =========================================
+  // إضافة منتج للسلة
+  // =========================================
+
+  function addToCart(product) {
+    const existing =
+      cart.find(
+        (item) =>
+          Number(item.id) ===
+          Number(product.id)
+      );
+
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push({
+        id: product.id,
+        name: product.name,
+        price: Number(product.price),
+        qty: 1
+      });
+    }
+
+    renderCart();
+  }
+
+  // =========================================
+  // عرض السلة
+  // =========================================
+
+  function renderCart() {
+    const container =
+      document.getElementById(
+        "cartContainer"
+      );
+
+    const totalElement =
+      document.getElementById(
+        "totalElement"
+      );
+
+    const cartCount =
+      document.getElementById(
+        "cartCount"
+      );
+
+    if (!container) return;
+
+    const total = cart.reduce(
+      (sum, item) =>
+        sum +
+        Number(item.price) *
+          Number(item.qty),
+      0
+    );
+
+    const count = cart.reduce(
+      (sum, item) =>
+        sum + Number(item.qty),
+      0
+    );
+
+    if (cartCount) {
+      cartCount.textContent =
+        count + " منتج";
+    }
+
+    if (totalElement) {
+      totalElement.textContent =
+        formatMoney(total);
+    }
+
+    if (cart.length === 0) {
+
+      container.innerHTML = `
+        <div class="empty-state">
+          <span>🛒</span>
+          <strong>السلة فارغة</strong>
+          <small>
+            اضغط على أي منتج لإضافته.
+          </small>
+        </div>
+      `;
+
+      return;
+    }
+
+    container.innerHTML =
+      cart
+        .map(
+          (item, index) => `
+            <div class="cart-item">
+
+              <div>
+
+                <strong>
+                  ${item.name}
+                </strong>
+
+                <small>
+                  ${formatMoney(item.price)}
+                  ×
+                  ${item.qty}
+                </small>
+
+              </div>
+
+              <div
+                style="
+                  display:flex;
+                  align-items:center;
+                  gap:5px;
+                "
+              >
+
+                <button
+                  class="secondary-button"
+                  style="
+                    width:38px;
+                    min-height:38px;
+                    padding:5px;
+                  "
+                  data-action="increase"
+                  data-index="${index}"
+                >
+                  +
+                </button>
+
+                <strong>
+                  ${item.qty}
+                </strong>
+
+                <button
+                  class="secondary-button"
+                  style="
+                    width:38px;
+                    min-height:38px;
+                    padding:5px;
+                  "
+                  data-action="decrease"
+                  data-index="${index}"
+                >
+                  −
+                </button>
+
+                <button
+                  class="danger-button"
+                  style="
+                    width:38px;
+                    min-height:38px;
+                    padding:5px;
+                  "
+                  data-action="remove"
+                  data-index="${index}"
+                >
+                  ×
+                </button>
+
+              </div>
+
+            </div>
+          `
+        )
+        .join("");
+
+    container
+      .querySelectorAll("[data-action]")
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const index =
+              Number(
+                button.dataset.index
+              );
+
+            const action =
+              button.dataset.action;
+
+            if (action === "increase") {
+              cart[index].qty += 1;
+            }
+
+            if (action === "decrease") {
+
+              cart[index].qty -= 1;
+
+              if (
+                cart[index].qty <= 0
+              ) {
+                cart.splice(index, 1);
+              }
+            }
+
+            if (action === "remove") {
+              cart.splice(index, 1);
+            }
+
+            renderCart();
+          }
+        );
+
+      });
+  }
+
+  // =========================================
+  // البحث عن المنتجات
+  // =========================================
+
+  function filterProducts(event) {
+
+    const search =
+      event.target.value
+        .trim()
+        .toLowerCase();
+
+    document
+      .querySelectorAll(
+        ".product-button"
+      )
+      .forEach((button) => {
+
+        const name =
+          button.dataset.name
+            .toLowerCase();
+
+        button.style.display =
+          name.includes(search)
+            ? ""
+            : "none";
+      });
+  }
+
+  // =========================================
+  // إتمام البيع
+  // =========================================
+
+  function completeSale() {
+
+    if (cart.length === 0) {
+
+      alert(
+        "أضف منتجًا إلى السلة أولًا."
+      );
+
+      return;
+    }
+
+    const total =
+      cart.reduce(
+        (sum, item) =>
+          sum +
+          Number(item.price) *
+            Number(item.qty),
+        0
+      );
+
+    const paymentMethod =
+      prompt(
+        "طريقة الدفع:\n\nاكتب نقدي أو بطاقة",
+        "نقدي"
+      );
+
+    if (paymentMethod === null) {
+      return;
+    }
+
+    const payment =
+      paymentMethod.trim() === "بطاقة"
+        ? "بطاقة"
+        : "نقدي";
+
+    const sale = {
+
+      invoiceNumber:
+        generateInvoiceNumber(),
+
+      createdAt:
+        new Date().toISOString(),
+
+      total:
+
+        total,
+
+      paymentMethod:
+        payment,
+
+      items:
+        cart.map(
+          (item) => ({
+            id: item.id,
+            name: item.name,
+            qty: item.qty,
+            price: item.price,
+            subtotal:
+              Number(item.qty) *
+              Number(item.price)
+          })
+        )
+    };
+
+    const sales = getSales();
+
+    sales.push(sale);
+
+    saveSales(sales);
+
+    cart = [];
+
+    showInvoice(sale);
+  }
+
+  // =========================================
+  // الفاتورة
+  // =========================================
+
+  function showInvoice(sale) {
+
+    const app =
+      document.querySelector(".app");
+
+    if (!app) return;
+
+    app.innerHTML = `
+
+      <div class="page">
+
+        <div class="invoice">
+
+          <div class="invoice-header">
+
+            <h1>
+              سوبر ماركت البرج
+            </h1>
+
+            <strong>
+              فاتورة بيع
+            </strong>
+
+            <p>
+              العملة: الليرة السورية
+            </p>
+
+          </div>
+
+          <div class="invoice-meta">
+
+            <div>
+              <strong>
+                رقم الفاتورة:
+              </strong>
+
+              ${sale.invoiceNumber}
+            </div>
+
+            <div>
+              <strong>
+                التاريخ:
+              </strong>
+
+              ${formatDate(
+                sale.createdAt
+              )}
+            </div>
+
+            <div>
+              <strong>
+                الوقت:
+              </strong>
+
+              ${formatTime(
+                sale.createdAt
+              )}
+            </div>
+
+            <div>
+              <strong>
+                طريقة الدفع:
+              </strong>
+
+              ${sale.paymentMethod}
+            </div>
+
+          </div>
+
+          <table class="invoice-table">
+
+            <thead>
+
+              <tr>
+                <th>المنتج</th>
+                <th>الكمية</th>
+                <th>السعر</th>
+                <th>المجموع</th>
+              </tr>
+
+            </thead>
+
+            <tbody>
+
+              ${sale.items
+                .map(
+                  (item) => `
+                    <tr>
+
+                      <td>
+                        ${item.name}
+                      </td>
+
+                      <td>
+                        ${item.qty}
+                      </td>
+
+                      <td>
+                        ${Number(
+                          item.price
+                        ).toLocaleString(
+                          "ar-SY"
+                        )}
+                      </td>
+
+                      <td>
+                        ${Number(
+                          item.subtotal
+                        ).toLocaleString(
+                          "ar-SY"
+                        )}
+                      </td>
+
+                    </tr>
+                  `
+                )
+                .join("")}
+
+            </tbody>
+
+          </table>
+
+          <div class="invoice-total">
+
+            <span>
+              الإجمالي
+            </span>
+
+            <h2>
+              ${formatMoney(
+                sale.total
+              )}
+            </h2>
+
+          </div>
+
+          <div
+            class="no-print"
+            style="
+              display:grid;
+              gap:10px;
+              margin-top:18px;
+            "
+          >
+
+            <button
+              class="primary-button"
+              id="printInvoice"
+            >
+              🖨️ طباعة الفاتورة
+            </button>
+
+            <button
+              class="secondary-button"
+              id="goToSales"
+            >
+              📋 سجل المبيعات
+            </button>
+
+            <button
+              class="secondary-button"
+              id="newSaleAfterInvoice"
+            >
+              🛒 بيع جديد
+            </button>
+
+            <button
+              class="secondary-button"
+              id="backHomeAfterInvoice"
+            >
+              🏠 لوحة التحكم
+            </button>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    `;
+
+    document
+      .getElementById("printInvoice")
+      ?.addEventListener(
+        "click",
+        () => {
+          window.print();
+        }
+      );
+
+    document
+      .getElementById("goToSales")
+      ?.addEventListener(
+        "click",
+        showSalesHistory
+      );
+
+    document
+      .getElementById("newSaleAfterInvoice")
+      ?.addEventListener(
+        "click",
+        showSalesScreen
+      );
+
+    document
+      .getElementById("backHomeAfterInvoice")
+      ?.addEventListener(
+        "click",
+        showDashboard
+      );
+  }
+
+  // =========================================
+  // سجل المبيعات
+  // =========================================
+
+  function showSalesHistory() {
+
+    const app =
+      document.querySelector(".app");
+
+    if (!app) return;
+
+    const sales = getSales();
+
+    const totalSales =
+      sales.reduce(
+        (sum, sale) =>
+          sum +
+          Number(sale.total || 0),
+        0
+      );
+
+    app.innerHTML = `
+
+      <div class="page">
+
+        <div class="page-header">
+
+          <button
+            class="back-button"
+            id="backFromSales"
+          >
+            ←
+          </button>
+
+          <div>
+            <h1>
+              سجل المبيعات
+            </h1>
+          </div>
+
+        </div>
+
+        <div class="form-card">
+
+          <input
+            id="salesSearch"
+            class="search-input"
+            type="search"
+            placeholder="🔎 ابحث برقم الفاتورة أو اسم المنتج..."
+          >
+
+        </div>
+
+        <div class="stats">
+
+          <div class="stat">
+            <span>
+              عدد الفواتير
+            </span>
+
+            <strong>
+              ${sales.length}
+            </strong>
+          </div>
+
+          <div class="stat">
+            <span>
+              إجمالي المبيعات
+            </span>
+
+            <strong>
+              ${formatMoney(
+                totalSales
+              )}
+            </strong>
+          </div>
+
+        </div>
+
+        <div class="section">
+
+          <div class="section-heading">
+
+            <h3>
+              الفواتير
+            </h3>
+
+            <span id="salesResultCount">
+              ${sales.length} فاتورة
+            </span>
+
+          </div>
+
+          <div
+            class="activity-list"
+            id="salesList"
+          >
+
+            ${renderSalesList(
+              sales
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      ${createBottomNavigation("sales")}
+    `;
+
+    document
+      .getElementById("backFromSales")
+      ?.addEventListener(
+        "click",
+        showDashboard
+      );
+
+    document
+      .getElementById("salesSearch")
+      ?.addEventListener(
+        "input",
+        searchSales
+      );
+
+    document
+      .querySelectorAll(
+        "[data-open-invoice]"
+      )
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const invoice =
+              button.dataset
+                .openInvoice;
+
+            const sale =
+              getSales().find(
+                (item) =>
+                  item.invoiceNumber ===
+                  invoice
+              );
+
+            if (sale) {
+              showInvoice(sale);
+            }
+          }
+        );
+
+      });
+
+    setupNavigation();
+  }
+
+  // =========================================
+  // عرض قائمة المبيعات
+  // =========================================
+
+  function renderSalesList(sales) {
+
+    if (!sales.length) {
+
+      return `
+        <div class="empty-state">
+          <span>🧾</span>
+
+          <strong>
+            لا توجد فواتير
+          </strong>
+
+          <small>
+            لم يتم العثور على أي مبيعات.
+          </small>
+        </div>
+      `;
+    }
+
+    return sales
+      .slice()
+      .reverse()
+      .map(
+        (sale) => `
+          <button
+            class="sale-card"
+            data-open-invoice="${sale.invoiceNumber}"
+            style="
+              width:100%;
+              border:1px solid var(--border);
+              text-align:right;
+            "
+          >
+
+            <div>
+
+              <strong>
+                ${sale.invoiceNumber}
+              </strong>
+
+              <small>
+                ${formatDate(
+                  sale.createdAt
+                )}
+                -
+                ${formatTime(
+                  sale.createdAt
+                )}
+              </small>
+
+              <small>
+                ${sale.items.length}
+                منتج
+                -
+                الدفع:
+                ${sale.paymentMethod}
+              </small>
+
+            </div>
+
+            <div class="sale-total">
+              ${formatMoney(
+                sale.total
+              )}
+            </div>
+
+          </button>
+        `
+      )
+      .join("");
+  }
+
+  // =========================================
+  // البحث في سجل المبيعات
+  // =========================================
+
+  function searchSales(event) {
+
+    const search =
+      event.target.value
+        .trim()
+        .toLowerCase();
+
+    const sales =
+      getSales();
+
+    const filtered =
+      sales.filter(
+        (sale) => {
+
+          const invoice =
+            String(
+              sale.invoiceNumber
+            ).toLowerCase();
+
+          const payment =
+            String(
+              sale.paymentMethod
+            ).toLowerCase();
+
+          const products =
+            sale.items
+              .map(
+                (item) =>
+                  item.name
+              )
+              .join(" ")
+              .toLowerCase();
+
+          return (
+            invoice.includes(search) ||
+            payment.includes(search) ||
+            products.includes(search)
+          );
+        }
+      );
+
+    const list =
+      document.getElementById(
+        "salesList"
+      );
+
+    if (list) {
+      list.innerHTML =
+        renderSalesList(
+          filtered
+        );
+    }
+
+    const counter =
+      document.getElementById(
+        "salesResultCount"
+      );
+
+    if (counter) {
+      counter.textContent =
+        filtered.length +
+        " فاتورة";
+    }
+
+    document
+      .querySelectorAll(
+        "[data-open-invoice]"
+      )
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const invoice =
+              button.dataset
+                .openInvoice;
+
+            const sale =
+              getSales().find(
+                (item) =>
+                  item.invoiceNumber ===
+                  invoice
+              );
+
+            if (sale) {
+              showInvoice(sale);
+            }
+          }
+        );
+
+      });
+  }
+
+  // =========================================
+  // شريط التنقل
+  // =========================================
+
+  function createBottomNavigation(active) {
+
+    return `
+      <nav class="bottom-nav">
+
+        <button
+          class="nav-item ${
+            active === "home"
+              ? "active"
+              : ""
+          }"
+          data-nav="home"
+        >
+          <span>⌂</span>
+          <small>الرئيسية</small>
+        </button>
+
+        <button
+          class="nav-item ${
+            active === "sales"
+              ? "active"
+              : ""
+          }"
+          data-nav="sales"
+        >
+          <span>📋</span>
+          <small>المبيعات</small>
+        </button>
+
+        <button
+          class="nav-item main-sale ${
+            active === "sale"
+              ? "active"
+              : ""
+          }"
+          data-nav="sale"
+        >
+          <span>+</span>
+          <small>بيع</small>
+        </button>
+
+        <button
+          class="nav-item"
+          data-nav="products"
+        >
+          <span>📦</span>
+          <small>المنتجات</small>
+        </button>
+
+        <button
+          class="nav-item"
+          data-nav="more"
+        >
+          <span>☰</span>
+          <small>المزيد</small>
+        </button>
+
+      </nav>
+    `;
+  }
+
+  function setupNavigation() {
+
+    document
+      .querySelectorAll(
+        "[data-nav]"
+      )
+      .forEach((button) => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const page =
+              button.dataset.nav;
+
+            if (page === "home") {
+              showDashboard();
+            }
+
+            else if (
+              page === "sales"
+            ) {
+              showSalesHistory();
+            }
+
+            else if (
+              page === "sale"
+            ) {
+              showSalesScreen();
+            }
+
+            else if (
+              page === "products"
+            ) {
+              alert(
+                "قسم المنتجات جاهز للتطوير."
+              );
+            }
+
+            else if (
+              page === "more"
+            ) {
+              alert(
+                "المزيد من خيارات النظام."
+              );
+            }
+
+          }
+        );
+
+      });
+  }
+
+  // =========================================
+  // بدء التطبيق
+  // =========================================
+
+  showDashboard();
+});];
 
 
 let cart = [];
