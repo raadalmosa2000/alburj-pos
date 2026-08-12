@@ -226,18 +226,17 @@ function showSalesScreen() {
   });
 });
     if (cart.length === 0) {
-      alert("أضف منتجًا إلى السلة أولًا");
+    
       return;
     }
 
-    alert(
-      "تم تجهيز الفاتورة بقيمة " +
+    alert( " +
       totalElement.textContent +
       " ريال"
     );
   });
 
-  document.getElementById("productSearch").addEventListener("input", (event) => {
+  .addEventListener("input", (event) => {
     const search = event.target.value.trim().toLowerCase();
 
     document.querySelectorAll(".product").forEach((button) => {
