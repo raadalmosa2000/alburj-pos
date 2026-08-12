@@ -8505,4 +8505,863 @@ document.addEventListener("DOMContentLoaded", () => {
   ensureDailyData();
 
   showDashboard();
+/* =========================================
+   المنتجات والمخزون
+========================================= */
+
+function showProducts() {
+  const app = getApp();
+
+  if (!app) return;
+
+  const products = getProducts();
+
+  const totalStock = products.reduce(
+    (sum, product) =>
+      sum + number(product.stock),
+    0
+  );
+
+  const lowStock = products.filter(
+    product =>
+      number(product.stock) <=
+      number(product.minStock)
+  ).length;
+
+  app.innerHTML = `
+    <div class="page">
+
+      <div class="page-header">
+
+        <button
+          class="back-button"
+          id="backProducts"
+        >
+          ←
+        </button>
+
+        <div>
+          <h1>المنتجات والمخزون</h1>
+        </div>
+
+      </div>
+
+      <section class="stats">
+
+        <div class="stat">
+          <span>عدد المنتجات</span>
+          <strong>${products.length}</strong>
+          <small>منتج</small>
+        </div>
+
+        <div class="stat">
+          <span>إجمالي المخزون</span>
+          <strong>${totalStock}</strong>
+          <small>قطعة</small>
+        </div>
+
+        <div class="stat">
+          <span>مخزون منخفض</span>
+          <strong>${lowStock}</strong>
+          <small>منتج</small>
+        </div>
+
+        <div class="stat">
+          <span>حالة المخزون</span>
+          <strong>
+            ${lowStock === 0 ? "جيد" : "تنبيه"}
+          </strong>
+          <small>
+            ${lowStock === 0
+              ? "كل شيء جيد"
+              : "راجع المنتجات"}
+          </small>
+        </div>
+
+      </section>
+
+      <section class="section">
+
+        <div class="section-heading">
+          <h3>إدارة المنتجات</h3>
+
+          <button
+            class="primary-button"
+            id="addProductButton"
+            style="
+              min-height:42px;
+              padding:8px 14px;
+            "
+          >
+            ＋ منتج جديد
+          </button>
+        </div>
+
+        <div class="form-card">
+
+          <input
+            id="productManagementSearch"
+            class="search-input"
+            type="search"
+            placeholder="🔎 ابحث عن اسم المنتج..."
+          >
+
+        </div>
+
+      </section>
+
+      <section class="section">
+
+        <div
+          id="productsManagementList"
+          class="activity-list"
+        >
+
+          ${renderProductsManagement(products)}
+
+        </div>
+
+      </section>
+
+    </div>
+
+    ${createBottomNavigation("products")}
+  `;
+
+  document
+    .getElementById("backProducts")
+    ?.addEventListener(
+      "click",
+      showDashboard
+    );
+
+  document
+    .getElementById("addProductButton")
+    ?.addEventListener(
+      "click",
+      () => showProductForm()
+    );
+
+  document
+    .getElementById(
+      "productManagementSearch"
+    )
+    ?.addEventListener(
+      "input",
+      searchProductsManagement
+    );
+
+  bindProductActions();
+
+  setupNavigation();
+}
+
+
+/* =========================================
+   عرض المنتجات
+========================================= */
+
+function renderProductsManagement(
+  products
+) {
+
+  if (!products.length) {
+    return `
+      <div class="empty-state">
+
+        <span>📦</span>
+
+        <strong>
+          لا توجد منتجات
+        </strong>
+
+        <small>
+          أضف أول منتج إلى المخزون.
+        </small>
+
+      </div>
+    `;
+  }
+
+  return products
+    .map(product => {
+
+      const stock =
+        number(product.stock);
+
+      const minStock =
+        number(product.minStock);
+
+      const low =
+        stock <= minStock;
+
+      return `
+        <div
+          class="inventory-card"
+          data-product-card="${product.id}"
+        >
+
+          <div
+            style="
+              display:flex;
+              justify-content:space-between;
+              align-items:flex-start;
+              gap:15px;
+            "
+          >
+
+            <div class="customer-info">
+
+              <strong class="customer-name">
+                ${escapeHtml(product.name)}
+              </strong>
+
+              <small>
+                السعر:
+                ${money(product.price)}
+              </small>
+
+              <small>
+                الحد الأدنى:
+                ${minStock}
+              </small>
+
+            </div>
+
+            <div
+              style="
+                text-align:left;
+              "
+            >
+
+              <strong
+                class="${
+                  low
+                    ? "remaining-amount"
+                    : "paid-amount"
+                }"
+                style="
+                  display:block;
+                  font-size:18px;
+                "
+              >
+                ${stock}
+              </strong>
+
+              <small
+                style="
+                  color:var(--muted);
+                  font-size:10px;
+                "
+              >
+                قطعة بالمخزون
+              </small>
+
+              <div
+                style="
+                  margin-top:6px;
+                "
+              >
+                ${
+                  low
+                    ? `
+                      <span class="badge badge-danger">
+                        مخزون منخفض
+                      </span>
+                    `
+                    : `
+                      <span class="badge badge-success">
+                        متوفر
+                      </span>
+                    `
+                }
+              </div>
+
+            </div>
+
+          </div>
+
+          <div
+            style="
+              display:grid;
+              grid-template-columns:
+                repeat(3,1fr);
+              gap:7px;
+              margin-top:15px;
+            "
+          >
+
+            <button
+              class="secondary-button"
+              data-product-edit="${product.id}"
+              style="
+                min-height:40px;
+                padding:7px;
+              "
+            >
+              ✎ تعديل
+            </button>
+
+            <button
+              class="warning-button"
+              data-product-stock="${product.id}"
+              style="
+                min-height:40px;
+                padding:7px;
+              "
+            >
+              ＋ جرد
+            </button>
+
+            <button
+              class="danger-button"
+              data-product-delete="${product.id}"
+              style="
+                min-height:40px;
+                padding:7px;
+              "
+            >
+              حذف
+            </button>
+
+          </div>
+
+        </div>
+      `;
+    })
+    .join("");
+}
+
+
+/* =========================================
+   نموذج إضافة / تعديل منتج
+========================================= */
+
+function showProductForm(productId = null) {
+
+  const app = getApp();
+
+  if (!app) return;
+
+  const products = getProducts();
+
+  const product =
+    productId !== null
+      ? products.find(
+          item =>
+            String(item.id) ===
+            String(productId)
+        )
+      : null;
+
+  const editing = Boolean(product);
+
+  app.innerHTML = `
+    <div class="page">
+
+      <div class="page-header">
+
+        <button
+          class="back-button"
+          id="backProductForm"
+        >
+          ←
+        </button>
+
+        <div>
+          <h1>
+            ${editing
+              ? "تعديل المنتج"
+              : "إضافة منتج جديد"}
+          </h1>
+        </div>
+
+      </div>
+
+      <section class="form-card">
+
+        <form id="productForm">
+
+          <div class="form-grid">
+
+            <div class="form-group full">
+
+              <label>
+                اسم المنتج
+              </label>
+
+              <input
+                id="productName"
+                class="form-input"
+                type="text"
+                required
+                value="${
+                  editing
+                    ? escapeHtml(product.name)
+                    : ""
+                }"
+                placeholder="مثال: عصير برتقال"
+              >
+
+            </div>
+
+            <div class="form-group">
+
+              <label>
+                سعر البيع
+              </label>
+
+              <input
+                id="productPrice"
+                class="form-input"
+                type="number"
+                min="0"
+                step="1"
+                required
+                value="${
+                  editing
+                    ? number(product.price)
+                    : ""
+                }"
+                placeholder="5000"
+              >
+
+            </div>
+
+            <div class="form-group">
+
+              <label>
+                كمية المخزون
+              </label>
+
+              <input
+                id="productStock"
+                class="form-input"
+                type="number"
+                min="0"
+                step="1"
+                required
+                value="${
+                  editing
+                    ? number(product.stock)
+                    : ""
+                }"
+                placeholder="20"
+              >
+
+            </div>
+
+            <div class="form-group">
+
+              <label>
+                حد التنبيه للمخزون
+              </label>
+
+              <input
+                id="productMinStock"
+                class="form-input"
+                type="number"
+                min="0"
+                step="1"
+                value="${
+                  editing
+                    ? number(product.minStock)
+                    : 5
+                }"
+                placeholder="5"
+              >
+
+            </div>
+
+          </div>
+
+          <div
+            style="
+              display:grid;
+              gap:10px;
+              margin-top:18px;
+            "
+          >
+
+            <button
+              class="primary-button"
+              type="submit"
+            >
+              ${
+                editing
+                  ? "✓ حفظ التعديلات"
+                  : "＋ إضافة المنتج"
+              }
+            </button>
+
+            ${
+              editing
+                ? `
+                  <button
+                    class="danger-button"
+                    type="button"
+                    id="deleteProductFromForm"
+                  >
+                    حذف المنتج
+                  </button>
+                `
+                : ""
+            }
+
+          </div>
+
+        </form>
+
+      </section>
+
+    </div>
+
+    ${createBottomNavigation("products")}
+  `;
+
+  document
+    .getElementById("backProductForm")
+    ?.addEventListener(
+      "click",
+      showProducts
+    );
+
+  document
+    .getElementById("productForm")
+    ?.addEventListener(
+      "submit",
+      event => {
+
+        event.preventDefault();
+
+        saveProductForm(productId);
+      }
+    );
+
+  document
+    .getElementById(
+      "deleteProductFromForm"
+    )
+    ?.addEventListener(
+      "click",
+      () => {
+
+        if (productId !== null) {
+          deleteProduct(productId);
+        }
+
+      }
+    );
+
+  setupNavigation();
+}
+
+
+/* =========================================
+   حفظ المنتج
+========================================= */
+
+function saveProductForm(productId) {
+
+  const name =
+    document
+      .getElementById("productName")
+      ?.value
+      .trim();
+
+  const price =
+    number(
+      document
+        .getElementById("productPrice")
+        ?.value
+    );
+
+  const stock =
+    number(
+      document
+        .getElementById("productStock")
+        ?.value
+    );
+
+  const minStock =
+    number(
+      document
+        .getElementById("productMinStock")
+        ?.value
+    );
+
+  if (!name) {
+    alert("اكتب اسم المنتج.");
+    return;
+  }
+
+  if (price < 0) {
+    alert("السعر غير صحيح.");
+    return;
+  }
+
+  if (stock < 0) {
+    alert("كمية المخزون غير صحيحة.");
+    return;
+  }
+
+  const products = getProducts();
+
+  if (productId === null) {
+
+    const exists =
+      products.some(
+        product =>
+          product.name.trim()
+            .toLowerCase() ===
+          name.toLowerCase()
+      );
+
+    if (exists) {
+      alert("هذا المنتج موجود مسبقًا.");
+      return;
+    }
+
+    products.push({
+      id: generateId("PROD"),
+      name,
+      price,
+      stock,
+      minStock
+    });
+
+  } else {
+
+    const index =
+      products.findIndex(
+        product =>
+          String(product.id) ===
+          String(productId)
+      );
+
+    if (index === -1) {
+      alert("المنتج غير موجود.");
+      return;
+    }
+
+    products[index] = {
+      ...products[index],
+      name,
+      price,
+      stock,
+      minStock
+    };
+  }
+
+  if (saveProducts(products)) {
+
+    alert(
+      productId === null
+        ? "تمت إضافة المنتج بنجاح."
+        : "تم حفظ تعديلات المنتج."
+    );
+
+    showProducts();
+  }
+}
+
+
+/* =========================================
+   حذف منتج
+========================================= */
+
+function deleteProduct(productId) {
+
+  const products = getProducts();
+
+  const product =
+    products.find(
+      item =>
+        String(item.id) ===
+        String(productId)
+    );
+
+  if (!product) {
+    alert("المنتج غير موجود.");
+    return;
+  }
+
+  const confirmed =
+    confirm(
+      `هل تريد حذف المنتج "${product.name}"؟`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  const filtered =
+    products.filter(
+      item =>
+        String(item.id) !==
+        String(productId)
+    );
+
+  if (saveProducts(filtered)) {
+
+    alert("تم حذف المنتج.");
+
+    showProducts();
+  }
+}
+
+
+/* =========================================
+   جرد المخزون
+========================================= */
+
+function updateProductStock(productId) {
+
+  const products = getProducts();
+
+  const product =
+    products.find(
+      item =>
+        String(item.id) ===
+        String(productId)
+    );
+
+  if (!product) {
+    alert("المنتج غير موجود.");
+    return;
+  }
+
+  const value =
+    prompt(
+      `كمية المخزون الجديدة لـ "${product.name}"؟`,
+      String(product.stock)
+    );
+
+  if (value === null) {
+    return;
+  }
+
+  const stock =
+    Number(value);
+
+  if (
+    !Number.isFinite(stock) ||
+    stock < 0
+  ) {
+    alert("أدخل كمية صحيحة.");
+    return;
+  }
+
+  product.stock = Math.floor(stock);
+
+  if (saveProducts(products)) {
+
+    alert("تم تحديث المخزون.");
+
+    showProducts();
+  }
+}
+
+
+/* =========================================
+   البحث في المنتجات
+========================================= */
+
+function searchProductsManagement(event) {
+
+  const search =
+    event.target.value
+      .trim()
+      .toLowerCase();
+
+  const products =
+    getProducts();
+
+  const filtered =
+    products.filter(
+      product =>
+        product.name
+          .toLowerCase()
+          .includes(search)
+    );
+
+  const list =
+    document.getElementById(
+      "productsManagementList"
+    );
+
+  if (list) {
+    list.innerHTML =
+      renderProductsManagement(
+        filtered
+      );
+  }
+
+  bindProductActions();
+}
+
+
+/* =========================================
+   أزرار المنتجات
+========================================= */
+
+function bindProductActions() {
+
+  document
+    .querySelectorAll(
+      "[data-product-edit]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          showProductForm(
+            button.dataset.productEdit
+          );
+
+        }
+      );
+
+    });
+
+  document
+    .querySelectorAll(
+      "[data-product-delete]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          deleteProduct(
+            button.dataset.productDelete
+          );
+
+        }
+      );
+
+    });
+
+  document
+    .querySelectorAll(
+      "[data-product-stock]"
+    )
+    .forEach(button => {
+
+      button.addEventListener(
+        "click",
+        () => {
+
+          updateProductStock(
+            button.dataset.productStock
+          );
+
+        }
+      );
+
+    });
+}
 });
