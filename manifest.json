@@ -1,1 +1,13 @@
-{"name":"البرج","short_name":"البرج","start_url":"./index.html","display":"standalone","background_color":"#070706","theme_color":"#090806","dir":"rtl","lang":"ar"}
+{
+  "name": "سوبر ماركت البرج",
+  "short_name": "البرج",
+  "description": "نظام إدارة مبيعات ومخزون سوبر ماركت البرج",
+  "lang": "ar",
+  "dir": "rtl",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#f5f7f5",
+  "theme_color": "#173f35",
+  "orientation": "portrait",
+  "icons": []
+}
