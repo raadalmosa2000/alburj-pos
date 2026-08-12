@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <meta name="theme-color" content="#111827">
+  <meta name="theme-color" content="#17120f">
 
   <title>إكسبريس البرج</title>
 
@@ -13,12 +13,117 @@
 
 <body>
 
-  <div id="app" class="app">
-    <div class="loading">
-      <div class="loading-logo">البرج</div>
-      <div class="loading-text">جاري تشغيل إكسبريس البرج...</div>
-    </div>
+  <div class="app">
+
+    <!--
+      =========================================
+      شعار ومقدمة الموقع
+      =========================================
+    -->
+
+    <header class="brand-header">
+
+      <div class="brand-image">
+        <!-- ضع صورة القهوة هنا لاحقًا -->
+        <img
+          src="coffee.jpg"
+          alt="إكسبريس البرج"
+          onerror="this.style.display='none'"
+        >
+      </div>
+
+      <div class="brand-info">
+        <span class="brand-kicker">نظام إدارة المبيعات</span>
+
+        <h1>إكسبريس البرج</h1>
+
+        <p>
+          إدارة المبيعات والعملاء والديون من مكان واحد
+        </p>
+      </div>
+
+      <div class="brand-logo">
+        <span>AL</span>
+        <strong>BURJ</strong>
+      </div>
+
+    </header>
+
+
+    <!--
+      =========================================
+      التطبيق
+      =========================================
+    -->
+
+    <main id="app" class="app-content">
+
+      <!--
+        سيتم إنشاء صفحات النظام
+        بواسطة app.js
+      -->
+
+    </main>
+
+
+    <!--
+      =========================================
+      شريط التنقل السفلي
+      =========================================
+    -->
+
+    <nav class="bottom-nav" id="bottomNavigation">
+
+      <button
+        class="nav-item active"
+        data-nav="home"
+      >
+        <span>⌂</span>
+        <small>الرئيسية</small>
+      </button>
+
+      <button
+        class="nav-item"
+        data-nav="sales"
+      >
+        <span>▣</span>
+        <small>المبيعات</small>
+      </button>
+
+      <button
+        class="nav-item main-sale"
+        data-nav="sale"
+      >
+        <span>＋</span>
+        <small>بيع جديد</small>
+      </button>
+
+      <button
+        class="nav-item"
+        data-nav="products"
+      >
+        <span>□</span>
+        <small>المنتجات</small>
+      </button>
+
+      <button
+        class="nav-item"
+        data-nav="more"
+      >
+        <span>☰</span>
+        <small>المزيد</small>
+      </button>
+
+    </nav>
+
   </div>
+
+
+  <!--
+    =========================================
+    JavaScript
+    =========================================
+  -->
 
   <script src="app.js"></script>
 
