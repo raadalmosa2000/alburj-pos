@@ -138,6 +138,93 @@ function showSalesScreen() {
   }
 
   document.getElementById("completeSale").addEventListener("click", () => {
+  if (cart.length === 0) {
+    alert("أضف منتجًا إلى السلة أولًا");
+    return;
+  }
+
+  const invoiceNumber = "INV-" + Date.now();
+  const now = new Date();
+
+  const date = now.toLocaleDateString("ar-SA");
+  const time = now.toLocaleTimeString("ar-SA", {
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+
+  const total = totalElement.textContent;
+
+  const invoiceItems = cart.map(item => `
+    <tr>
+      <td>${item.name}</td>
+      <td>${item.qty}</td>
+      <td>${item.price.toFixed(2)}</td>
+      <td>${(item.qty * item.price).toFixed(2)}</td>
+    </tr>
+  `).join("");
+
+  document.querySelector(".app").innerHTML = `
+    <div style="padding:20px;max-width:600px;margin:auto;background:#fff;min-height:100vh;">
+      
+      <div style="text-align:center;">
+        <h1>سوبر ماركت البرج</h1>
+        <p>فاتورة بيع</p>
+      </div>
+
+      <hr>
+
+      <p><strong>رقم الفاتورة:</strong> ${invoiceNumber}</p>
+      <p><strong>التاريخ:</strong> ${date}</p>
+      <p><strong>الوقت:</strong> ${time}</p>
+
+      <table style="width:100%;border-collapse:collapse;text-align:right;">
+        <thead>
+          <tr>
+            <th style="padding:8px;border-bottom:1px solid #ccc;">المنتج</th>
+            <th style="padding:8px;border-bottom:1px solid #ccc;">الكمية</th>
+            <th style="padding:8px;border-bottom:1px solid #ccc;">السعر</th>
+            <th style="padding:8px;border-bottom:1px solid #ccc;">المجموع</th>
+          </tr>
+        </thead>
+
+        <tbody>
+          ${invoiceItems}
+        </tbody>
+      </table>
+
+      <hr>
+
+      <h2 style="text-align:center;">
+        الإجمالي: ${total} ريال
+      </h2>
+
+      <label style="display:block;margin:15px 0 8px;">
+        طريقة الدفع
+      </label>
+
+      <select id="paymentMethod"
+        style="width:100%;padding:14px;border-radius:10px;font-size:16px;">
+        <option value="نقدي">نقدي</option>
+        <option value="بطاقة">بطاقة</option>
+      </select>
+
+      <button id="printInvoice"
+        style="width:100%;padding:15px;margin-top:15px;border:0;border-radius:12px;font-size:17px;">
+        طباعة الفاتورة
+      </button>
+
+      <button onclick="location.reload()"
+        style="width:100%;padding:15px;margin-top:10px;border:0;border-radius:12px;font-size:17px;">
+        بيع جديد
+      </button>
+
+    </div>
+  `;
+
+  document.getElementById("printInvoice").addEventListener("click", () => {
+    window.print();
+  });
+});
     if (cart.length === 0) {
       alert("أضف منتجًا إلى السلة أولًا");
       return;
