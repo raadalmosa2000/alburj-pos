@@ -347,7 +347,27 @@ function showSales() {
 
 
 function showInvoice(cart) {
+var sales = JSON.parse(
+  localStorage.getItem("alburj_sales") || "[]"
+);
 
+var total = cart.reduce(function (sum, item) {
+  return sum + (item.price * item.qty);
+}, 0);
+
+var sale = {
+  invoiceNumber: "INV-" + Date.now(),
+  date: new Date().toISOString(),
+  items: cart,
+  total: total
+};
+
+sales.push(sale);
+
+localStorage.setItem(
+  "alburj_sales",
+  JSON.stringify(sales)
+);
   var invoiceNumber =
     "INV-" + Date.now();
 
