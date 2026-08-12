@@ -8,12 +8,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (
         text.indexOf("بيع جديد") !== -1 ||
-        text.indexOf("بيع") !== -1
+        text === "＋بيع" ||
+        text.indexOf("المبيعات") !== -1
       ) {
-        showSales();
-      }
-
-      else if (text.indexOf("المبيعات") !== -1) {
         showSales();
       }
 
@@ -29,6 +26,14 @@ document.addEventListener("DOMContentLoaded", function () {
         alert("قسم المخزون قيد التطوير");
       }
 
+      else if (text.indexOf("المنتجات") !== -1) {
+        alert("قسم المنتجات قيد التطوير");
+      }
+
+      else if (text.indexOf("المزيد") !== -1) {
+        alert("المزيد من خيارات النظام");
+      }
+
     });
 
   });
@@ -36,12 +41,16 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
+/* =========================
+   شاشة البيع
+========================= */
+
 function showSales() {
 
   var app = document.querySelector(".app");
 
   app.innerHTML = `
-    <div style="padding:20px;">
+    <div style="padding:20px;max-width:700px;margin:auto;">
 
       <h1>بيع جديد</h1>
 
@@ -183,6 +192,8 @@ function showSales() {
   var cart = [];
 
 
+  /* اختيار المنتجات */
+
   document.querySelectorAll(".product").forEach(function (product) {
 
     product.addEventListener("click", function () {
@@ -205,11 +216,13 @@ function showSales() {
       }
 
       else {
+
         cart.push({
           name: name,
           price: price,
           qty: 1
         });
+
       }
 
 
@@ -219,6 +232,8 @@ function showSales() {
 
   });
 
+
+  /* عرض السلة */
 
   function drawCart() {
 
@@ -235,10 +250,11 @@ function showSales() {
         "0";
 
       return;
+
     }
 
 
-    var total = 0;
+    var totalValue = 0;
 
 
     cartBox.innerHTML =
@@ -247,7 +263,7 @@ function showSales() {
         var itemTotal =
           item.price * item.qty;
 
-        total += itemTotal;
+        totalValue += itemTotal;
 
 
         return `
@@ -283,10 +299,12 @@ function showSales() {
 
 
     document.getElementById("total").innerText =
-      formatMoney(total);
+      formatMoney(totalValue);
 
   }
 
+
+  /* إتمام البيع */
 
   document
     .getElementById("complete")
@@ -297,6 +315,7 @@ function showSales() {
         alert("أضف منتجًا أولًا");
 
         return;
+
       }
 
 
@@ -304,6 +323,8 @@ function showSales() {
 
     });
 
+
+  /* العودة */
 
   document
     .getElementById("back")
@@ -313,6 +334,8 @@ function showSales() {
 
     });
 
+
+  /* البحث */
 
   document
     .getElementById("search")
@@ -346,28 +369,12 @@ function showSales() {
 }
 
 
+/* =========================
+   الفاتورة + حفظ المبيعات
+========================= */
+
 function showInvoice(cart) {
-var sales = JSON.parse(
-  localStorage.getItem("alburj_sales") || "[]"
-);
 
-var total = cart.reduce(function (sum, item) {
-  return sum + (item.price * item.qty);
-}, 0);
-
-var sale = {
-  invoiceNumber: "INV-" + Date.now(),
-  date: new Date().toISOString(),
-  items: cart,
-  total: total
-};
-
-sales.push(sale);
-
-localStorage.setItem(
-  "alburj_sales",
-  JSON.stringify(sales)
-);
   var invoiceNumber =
     "INV-" + Date.now();
 
@@ -406,42 +413,19 @@ localStorage.setItem(
       return `
         <tr>
 
-          <td
-            style="
-              padding:8px;
-              border-bottom:1px solid #ddd;
-            "
-          >
+          <td style="padding:8px;">
             ${item.name}
           </td>
 
-
-          <td
-            style="
-              padding:8px;
-              border-bottom:1px solid #ddd;
-            "
-          >
+          <td style="padding:8px;">
             ${item.qty}
           </td>
 
-
-          <td
-            style="
-              padding:8px;
-              border-bottom:1px solid #ddd;
-            "
-          >
+          <td style="padding:8px;">
             ${formatMoney(item.price)}
           </td>
 
-
-          <td
-            style="
-              padding:8px;
-              border-bottom:1px solid #ddd;
-            "
-          >
+          <td style="padding:8px;">
             ${formatMoney(sum)}
           </td>
 
@@ -450,6 +434,39 @@ localStorage.setItem(
 
     }).join("");
 
+
+  /* حفظ الفاتورة */
+
+  var sales =
+    JSON.parse(
+      localStorage.getItem("alburj_sales") || "[]"
+    );
+
+
+  sales.push({
+
+    invoiceNumber: invoiceNumber,
+
+    date: date,
+
+    time: time,
+
+    items: cart,
+
+    total: total,
+
+    payment: "نقدي"
+
+  });
+
+
+  localStorage.setItem(
+    "alburj_sales",
+    JSON.stringify(sales)
+  );
+
+
+  /* عرض الفاتورة */
 
   document.querySelector(".app").innerHTML = `
 
@@ -463,11 +480,7 @@ localStorage.setItem(
       "
     >
 
-      <div
-        style="
-          text-align:center;
-        "
-      >
+      <div style="text-align:center;">
 
         <h1>
           سوبر ماركت البرج
@@ -559,12 +572,7 @@ localStorage.setItem(
       <hr>
 
 
-      <h2
-        style="
-          text-align:center;
-          margin:20px 0;
-        "
-      >
+      <h2 style="text-align:center;">
 
         الإجمالي:
 
@@ -636,6 +644,8 @@ localStorage.setItem(
   `;
 
 
+  /* طباعة */
+
   document
     .getElementById("print")
     .addEventListener("click", function () {
@@ -644,6 +654,8 @@ localStorage.setItem(
 
     });
 
+
+  /* بيع جديد */
 
   document
     .getElementById("new")
@@ -655,6 +667,138 @@ localStorage.setItem(
 
 }
 
+
+/* =========================
+   سجل المبيعات
+========================= */
+
+function showSalesHistory() {
+
+  var sales =
+    JSON.parse(
+      localStorage.getItem("alburj_sales") || "[]"
+    );
+
+
+  var app =
+    document.querySelector(".app");
+
+
+  if (sales.length === 0) {
+
+    app.innerHTML = `
+      <div style="padding:20px;">
+
+        <h1>
+          المبيعات
+        </h1>
+
+        <p>
+          لا توجد مبيعات محفوظة حتى الآن.
+        </p>
+
+        <button onclick="location.reload()">
+          العودة
+        </button>
+
+      </div>
+    `;
+
+    return;
+
+  }
+
+
+  var totalSales = sales.reduce(
+    function (sum, sale) {
+      return sum + sale.total;
+    },
+    0
+  );
+
+
+  var invoices =
+    sales.map(function (sale) {
+
+      return `
+        <div
+          style="
+            padding:15px;
+            margin-bottom:10px;
+            border:1px solid #ddd;
+            border-radius:12px;
+          "
+        >
+
+          <strong>
+            ${sale.invoiceNumber}
+          </strong>
+
+          <br>
+
+          ${sale.date}
+          -
+          ${sale.time}
+
+          <br>
+
+          الإجمالي:
+
+          <strong>
+            ${formatMoney(sale.total)}
+            ل.س
+          </strong>
+
+        </div>
+      `;
+
+    }).join("");
+
+
+  app.innerHTML = `
+
+    <div style="padding:20px;">
+
+      <h1>
+        المبيعات
+      </h1>
+
+      <h2>
+        إجمالي المبيعات:
+        ${formatMoney(totalSales)}
+        ل.س
+      </h2>
+
+      <p>
+        عدد الفواتير:
+        ${sales.length}
+      </p>
+
+      <hr>
+
+      ${invoices}
+
+      <button
+        onclick="location.reload()"
+        style="
+          width:100%;
+          padding:15px;
+          margin-top:15px;
+        "
+      >
+        العودة
+      </button>
+
+    </div>
+
+  `;
+
+}
+
+
+/* =========================
+   تنسيق المبالغ
+========================= */
 
 function formatMoney(number) {
 
