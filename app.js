@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {alert("تم تحميل app.js");
+document.addEventListener("DOMContentLoaded", () => {
   const buttons = document.querySelectorAll("button");
 
   buttons.forEach((button) => {
