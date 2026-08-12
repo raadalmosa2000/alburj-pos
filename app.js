@@ -6,20 +6,156 @@ document.addEventListener("DOMContentLoaded", () => {
       const text = button.innerText.trim();
 
       if (text.includes("بيع جديد") || text.includes("بيع")) {
-        alert("شاشة البيع الجديدة ستكون هنا");
+        showSalesScreen();
       } else if (text.includes("منتج جديد")) {
-        alert("شاشة إضافة منتج ستكون هنا");
+        alert("سنضيف شاشة المنتجات هنا");
       } else if (text.includes("عميل جديد")) {
-        alert("شاشة إضافة عميل ستكون هنا");
+        alert("سنضيف شاشة العملاء هنا");
       } else if (text.includes("جرد المخزون")) {
-        alert("شاشة جرد المخزون ستكون هنا");
+        alert("سنضيف شاشة المخزون هنا");
       } else if (text.includes("المبيعات")) {
-        alert("قسم المبيعات");
+        showSalesScreen();
       } else if (text.includes("المنتجات")) {
         alert("قسم المنتجات");
       } else if (text.includes("المزيد")) {
-        alert("المزيد من الخيارات");
+        alert("المزيد من خيارات النظام");
       }
     });
   });
 });
+
+function showSalesScreen() {
+  document.querySelector(".app").innerHTML = `
+    <header class="topbar">
+      <div>
+        <span class="kicker">نظام البرج</span>
+        <h1>بيع جديد</h1>
+      </div>
+      <button onclick="location.reload()">×</button>
+    </header>
+
+    <section class="sales-screen">
+      <div class="title">
+        <h3>المنتجات</h3>
+        <span>الفاتورة الجديدة</span>
+      </div>
+
+      <input
+        id="productSearch"
+        type="text"
+        placeholder="ابحث عن منتج..."
+        style="width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #ddd;margin-bottom:15px;font-size:16px;"
+      >
+
+      <div id="products">
+        <button class="product" data-name="مياه البرج" data-price="1.50">
+          مياه البرج - 1.50 ريال
+        </button>
+
+        <button class="product" data-name="عصير برتقال" data-price="3.00">
+          عصير برتقال - 3.00 ريال
+        </button>
+
+        <button class="product" data-name="خبز" data-price="2.00">
+          خبز - 2.00 ريال
+        </button>
+
+        <button class="product" data-name="حليب" data-price="5.50">
+          حليب - 5.50 ريال
+        </button>
+      </div>
+
+      <section style="margin-top:20px;">
+        <div class="title">
+          <h3>السلة</h3>
+        </div>
+
+        <div id="cart">
+          <div class="empty">السلة فارغة</div>
+        </div>
+
+        <div style="margin-top:20px;padding:18px;border-radius:16px;background:#f5f5f5;">
+          <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:bold;">
+            <span>الإجمالي</span>
+            <span><span id="total">0.00</span> ريال</span>
+          </div>
+
+          <button
+            id="completeSale"
+            style="width:100%;margin-top:15px;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:bold;"
+          >
+            إتمام البيع
+          </button>
+        </div>
+      </section>
+    </section>
+  `;
+
+  const cart = [];
+  const cartElement = document.getElementById("cart");
+  const totalElement = document.getElementById("total");
+
+  document.querySelectorAll(".product").forEach((button) => {
+    button.addEventListener("click", () => {
+      const name = button.dataset.name;
+      const price = Number(button.dataset.price);
+
+      const existing = cart.find((item) => item.name === name);
+
+      if (existing) {
+        existing.qty++;
+      } else {
+        cart.push({ name, price, qty: 1 });
+      }
+
+      renderCart();
+    });
+  });
+
+  function renderCart() {
+    if (cart.length === 0) {
+      cartElement.innerHTML = `<div class="empty">السلة فارغة</div>`;
+      totalElement.textContent = "0.00";
+      return;
+    }
+
+    cartElement.innerHTML = cart.map((item) => `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #ddd;">
+        <div>
+          <strong>${item.name}</strong>
+          <div>${item.qty} × ${item.price.toFixed(2)} ريال</div>
+        </div>
+        <strong>${(item.qty * item.price).toFixed(2)} ريال</strong>
+      </div>
+    `).join("");
+
+    const total = cart.reduce(
+      (sum, item) => sum + item.price * item.qty,
+      0
+    );
+
+    totalElement.textContent = total.toFixed(2);
+  }
+
+  document.getElementById("completeSale").addEventListener("click", () => {
+    if (cart.length === 0) {
+      alert("أضف منتجًا إلى السلة أولًا");
+      return;
+    }
+
+    alert(
+      "تم تجهيز الفاتورة بقيمة " +
+      totalElement.textContent +
+      " ريال"
+    );
+  });
+
+  document.getElementById("productSearch").addEventListener("input", (event) => {
+    const search = event.target.value.trim().toLowerCase();
+
+    document.querySelectorAll(".product").forEach((button) => {
+      const name = button.dataset.name.toLowerCase();
+      button.style.display = name.includes(search) ? "block" : "none";
+    });
+  });
+}
