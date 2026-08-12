@@ -8,9 +8,12 @@ document.addEventListener("DOMContentLoaded", function () {
 
       if (
         text.indexOf("بيع جديد") !== -1 ||
-        text === "＋بيع" ||
-        text.indexOf("المبيعات") !== -1
+        text === "＋بيع"
       ) {
+        showSales();
+      }
+
+      else if (text.indexOf("المبيعات") !== -1) {
         showSalesHistory();
       }
 
@@ -41,16 +44,12 @@ document.addEventListener("DOMContentLoaded", function () {
 });
 
 
-/* =========================
-   شاشة البيع
-========================= */
-
 function showSales() {
 
   var app = document.querySelector(".app");
 
   app.innerHTML = `
-    <div style="padding:20px;max-width:700px;margin:auto;">
+    <div style="padding:20px;max-width:700px;margin:auto">
 
       <h1>بيع جديد</h1>
 
@@ -64,82 +63,41 @@ function showSales() {
           margin:15px 0;
           border-radius:10px;
           border:1px solid #ddd;
-          font-size:16px;
+          font-size:16px
         "
       >
 
       <div id="products">
 
-        <button
-          class="product"
+        <button class="product"
           data-name="مياه البرج"
           data-price="1500"
-          style="
-            display:block;
-            width:100%;
-            padding:15px;
-            margin-bottom:10px;
-            border:1px solid #ddd;
-            border-radius:12px;
-            font-size:16px;
-          "
-        >
+          style="display:block;width:100%;padding:15px;margin-bottom:10px">
           مياه البرج - 1,500 ل.س
         </button>
 
-        <button
-          class="product"
+        <button class="product"
           data-name="عصير برتقال"
           data-price="5000"
-          style="
-            display:block;
-            width:100%;
-            padding:15px;
-            margin-bottom:10px;
-            border:1px solid #ddd;
-            border-radius:12px;
-            font-size:16px;
-          "
-        >
+          style="display:block;width:100%;padding:15px;margin-bottom:10px">
           عصير برتقال - 5,000 ل.س
         </button>
 
-        <button
-          class="product"
+        <button class="product"
           data-name="خبز"
           data-price="2000"
-          style="
-            display:block;
-            width:100%;
-            padding:15px;
-            margin-bottom:10px;
-            border:1px solid #ddd;
-            border-radius:12px;
-            font-size:16px;
-          "
-        >
+          style="display:block;width:100%;padding:15px;margin-bottom:10px">
           خبز - 2,000 ل.س
         </button>
 
-        <button
-          class="product"
+        <button class="product"
           data-name="حليب"
           data-price="7000"
-          style="
-            display:block;
-            width:100%;
-            padding:15px;
-            margin-bottom:10px;
-            border:1px solid #ddd;
-            border-radius:12px;
-            font-size:16px;
-          "
-        >
+          style="display:block;width:100%;padding:15px;margin-bottom:10px">
           حليب - 7,000 ل.س
         </button>
 
       </div>
-
 
       <h2>السلة</h2>
 
@@ -147,41 +105,21 @@ function showSales() {
         السلة فارغة
       </div>
 
-
-      <h2 style="margin-top:20px;">
+      <h2>
         الإجمالي:
         <span id="total">0</span>
         ل.س
       </h2>
 
-
       <button
         id="complete"
-        style="
-          width:100%;
-          padding:16px;
-          margin-top:15px;
-          border:0;
-          border-radius:12px;
-          font-size:17px;
-          font-weight:bold;
-        "
-      >
+        style="width:100%;padding:16px;margin-top:15px;font-size:17px">
         إتمام البيع
       </button>
 
-
       <button
         id="back"
-        style="
-          width:100%;
-          padding:15px;
-          margin-top:10px;
-          border:0;
-          border-radius:12px;
-          font-size:16px;
-        "
-      >
+        style="width:100%;padding:15px;margin-top:10px">
         العودة
       </button>
 
@@ -191,8 +129,6 @@ function showSales() {
 
   var cart = [];
 
-
-  /* اختيار المنتجات */
 
   document.querySelectorAll(".product").forEach(function (product) {
 
@@ -205,24 +141,20 @@ function showSales() {
         Number(product.getAttribute("data-price"));
 
 
-      var found =
+      var existing =
         cart.find(function (item) {
           return item.name === name;
         });
 
 
-      if (found) {
-        found.qty++;
-      }
-
-      else {
-
+      if (existing) {
+        existing.qty++;
+      } else {
         cart.push({
           name: name,
           price: price,
           qty: 1
         });
-
       }
 
 
@@ -233,12 +165,12 @@ function showSales() {
   });
 
 
-  /* عرض السلة */
-
   function drawCart() {
 
     var cartBox =
       document.getElementById("cart");
+
+    var total = 0;
 
 
     if (cart.length === 0) {
@@ -254,29 +186,22 @@ function showSales() {
     }
 
 
-    var totalValue = 0;
-
-
     cartBox.innerHTML =
       cart.map(function (item) {
 
         var itemTotal =
           item.price * item.qty;
 
-        totalValue += itemTotal;
+        total += itemTotal;
 
 
         return `
-          <div
-            style="
-              padding:12px 5px;
-              border-bottom:1px solid #ddd;
-            "
-          >
+          <div style="
+            padding:12px;
+            border-bottom:1px solid #ddd
+          ">
 
-            <strong>
-              ${item.name}
-            </strong>
+            <strong>${item.name}</strong>
 
             <br>
 
@@ -299,12 +224,10 @@ function showSales() {
 
 
     document.getElementById("total").innerText =
-      formatMoney(totalValue);
+      formatMoney(total);
 
   }
 
-
-  /* إتمام البيع */
 
   document
     .getElementById("complete")
@@ -318,13 +241,10 @@ function showSales() {
 
       }
 
-
       showInvoice(cart);
 
     });
 
-
-  /* العودة */
 
   document
     .getElementById("back")
@@ -335,16 +255,12 @@ function showSales() {
     });
 
 
-  /* البحث */
-
   document
     .getElementById("search")
     .addEventListener("input", function () {
 
       var value =
-        this.value
-          .toLowerCase()
-          .trim();
+        this.value.toLowerCase().trim();
 
 
       document
@@ -369,23 +285,16 @@ function showSales() {
 }
 
 
-/* =========================
-   الفاتورة + حفظ المبيعات
-========================= */
-
 function showInvoice(cart) {
 
   var invoiceNumber =
     "INV-" + Date.now();
 
-
   var now =
     new Date();
 
-
   var date =
     now.toLocaleDateString("ar-SY");
-
 
   var time =
     now.toLocaleTimeString(
@@ -400,6 +309,11 @@ function showInvoice(cart) {
   var total = 0;
 
 
+  cart.forEach(function (item) {
+    total += item.price * item.qty;
+  });
+
+
   var rows =
     cart.map(function (item) {
 
@@ -407,25 +321,22 @@ function showInvoice(cart) {
         item.price * item.qty;
 
 
-      total += sum;
-
-
       return `
         <tr>
 
-          <td style="padding:8px;">
+          <td style="padding:8px">
             ${item.name}
           </td>
 
-          <td style="padding:8px;">
+          <td style="padding:8px">
             ${item.qty}
           </td>
 
-          <td style="padding:8px;">
+          <td style="padding:8px">
             ${formatMoney(item.price)}
           </td>
 
-          <td style="padding:8px;">
+          <td style="padding:8px">
             ${formatMoney(sum)}
           </td>
 
@@ -435,52 +346,17 @@ function showInvoice(cart) {
     }).join("");
 
 
-  /* حفظ الفاتورة */
-
-  var sales =
-    JSON.parse(
-      localStorage.getItem("alburj_sales") || "[]"
-    );
-
-
-  sales.push({
-
-    invoiceNumber: invoiceNumber,
-
-    date: date,
-
-    time: time,
-
-    items: cart,
-
-    total: total,
-
-    payment: "نقدي"
-
-  });
-
-
-  localStorage.setItem(
-    "alburj_sales",
-    JSON.stringify(sales)
-  );
-
-
-  /* عرض الفاتورة */
-
   document.querySelector(".app").innerHTML = `
 
-    <div
-      style="
-        padding:20px;
-        max-width:600px;
-        margin:auto;
-        background:white;
-        min-height:100vh;
-      "
-    >
+    <div style="
+      padding:20px;
+      max-width:600px;
+      margin:auto;
+      background:#fff;
+      min-height:100vh
+    ">
 
-      <div style="text-align:center;">
+      <div style="text-align:center">
 
         <h1>
           سوبر ماركت البرج
@@ -496,88 +372,54 @@ function showInvoice(cart) {
 
       </div>
 
-
       <hr>
 
-
       <p>
-        <strong>
-          رقم الفاتورة:
-        </strong>
-
+        <strong>رقم الفاتورة:</strong>
         ${invoiceNumber}
       </p>
 
-
       <p>
-        <strong>
-          التاريخ:
-        </strong>
-
+        <strong>التاريخ:</strong>
         ${date}
       </p>
 
-
       <p>
-        <strong>
-          الوقت:
-        </strong>
-
+        <strong>الوقت:</strong>
         ${time}
       </p>
 
-
-      <table
-        style="
-          width:100%;
-          border-collapse:collapse;
-          text-align:right;
-        "
-      >
+      <table style="
+        width:100%;
+        border-collapse:collapse;
+        text-align:right
+      ">
 
         <thead>
 
           <tr>
 
-            <th style="padding:8px;">
-              المنتج
-            </th>
-
-            <th style="padding:8px;">
-              الكمية
-            </th>
-
-            <th style="padding:8px;">
-              السعر
-            </th>
-
-            <th style="padding:8px;">
-              المجموع
-            </th>
+            <th>المنتج</th>
+            <th>الكمية</th>
+            <th>السعر</th>
+            <th>المجموع</th>
 
           </tr>
 
         </thead>
 
-
         <tbody>
-
           ${rows}
-
         </tbody>
 
       </table>
 
-
       <hr>
 
-
-      <h2 style="text-align:center;">
+      <h2 style="text-align:center">
 
         الإجمالي:
-
         ${formatMoney(total)}
-
         ل.س
 
       </h2>
@@ -587,15 +429,13 @@ function showInvoice(cart) {
         طريقة الدفع
       </label>
 
-
       <select
         id="payment"
         style="
           width:100%;
           padding:14px;
           margin-top:10px;
-          border-radius:10px;
-          font-size:16px;
+          font-size:16px
         "
       >
 
@@ -611,14 +451,25 @@ function showInvoice(cart) {
 
 
       <button
-        id="print"
+        id="saveSale"
         style="
           width:100%;
           padding:16px;
           margin-top:20px;
-          border:0;
-          border-radius:12px;
-          font-size:17px;
+          font-size:17px
+        "
+      >
+        حفظ الفاتورة
+      </button>
+
+
+      <button
+        id="print"
+        style="
+          width:100%;
+          padding:16px;
+          margin-top:10px;
+          font-size:17px
         "
       >
         طباعة الفاتورة
@@ -631,9 +482,7 @@ function showInvoice(cart) {
           width:100%;
           padding:16px;
           margin-top:10px;
-          border:0;
-          border-radius:12px;
-          font-size:17px;
+          font-size:17px
         "
       >
         بيع جديد
@@ -644,7 +493,47 @@ function showInvoice(cart) {
   `;
 
 
-  /* طباعة */
+  document
+    .getElementById("saveSale")
+    .addEventListener("click", function () {
+
+      var payment =
+        document.getElementById("payment").value;
+
+
+      var sales =
+        JSON.parse(
+          localStorage.getItem("alburj_sales") || "[]"
+        );
+
+
+      sales.push({
+
+        invoiceNumber: invoiceNumber,
+
+        date: date,
+
+        time: time,
+
+        items: cart,
+
+        total: total,
+
+        payment: payment
+
+      });
+
+
+      localStorage.setItem(
+        "alburj_sales",
+        JSON.stringify(sales)
+      );
+
+
+      alert("تم حفظ الفاتورة بنجاح");
+
+    });
+
 
   document
     .getElementById("print")
@@ -654,8 +543,6 @@ function showInvoice(cart) {
 
     });
 
-
-  /* بيع جديد */
 
   document
     .getElementById("new")
@@ -667,10 +554,6 @@ function showInvoice(cart) {
 
 }
 
-
-/* =========================
-   سجل المبيعات
-========================= */
 
 function showSalesHistory() {
 
@@ -687,7 +570,8 @@ function showSalesHistory() {
   if (sales.length === 0) {
 
     app.innerHTML = `
-      <div style="padding:20px;">
+
+      <div style="padding:20px">
 
         <h1>
           المبيعات
@@ -702,6 +586,7 @@ function showSalesHistory() {
         </button>
 
       </div>
+
     `;
 
     return;
@@ -709,26 +594,27 @@ function showSalesHistory() {
   }
 
 
-  var totalSales = sales.reduce(
-    function (sum, sale) {
-      return sum + sale.total;
-    },
-    0
-  );
+  var totalSales = 0;
+
+
+  sales.forEach(function (sale) {
+
+    totalSales += Number(sale.total);
+
+  });
 
 
   var invoices =
     sales.map(function (sale) {
 
       return `
-        <div
-          style="
-            padding:15px;
-            margin-bottom:10px;
-            border:1px solid #ddd;
-            border-radius:12px;
-          "
-        >
+
+        <div style="
+          padding:15px;
+          margin-bottom:10px;
+          border:1px solid #ddd;
+          border-radius:12px
+        ">
 
           <strong>
             ${sale.invoiceNumber}
@@ -736,9 +622,18 @@ function showSalesHistory() {
 
           <br>
 
+          التاريخ:
           ${sale.date}
-          -
+
+          <br>
+
+          الوقت:
           ${sale.time}
+
+          <br>
+
+          طريقة الدفع:
+          ${sale.payment}
 
           <br>
 
@@ -750,6 +645,7 @@ function showSalesHistory() {
           </strong>
 
         </div>
+
       `;
 
     }).join("");
@@ -757,7 +653,7 @@ function showSalesHistory() {
 
   app.innerHTML = `
 
-    <div style="padding:20px;">
+    <div style="padding:20px">
 
       <h1>
         المبيعات
@@ -783,7 +679,7 @@ function showSalesHistory() {
         style="
           width:100%;
           padding:15px;
-          margin-top:15px;
+          margin-top:15px
         "
       >
         العودة
@@ -795,10 +691,6 @@ function showSalesHistory() {
 
 }
 
-
-/* =========================
-   تنسيق المبالغ
-========================= */
 
 function formatMoney(number) {
 
