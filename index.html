@@ -4,33 +4,24 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-  <title>إكسبريس البرج</title>
-
-  <meta
-    name="description"
-    content="نظام إكسبريس البرج لإدارة المبيعات والمخزون والعملاء والديون"
-  >
-
   <meta name="theme-color" content="#0f172a">
+
+  <title>إكسبريس البرج</title>
 
   <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
 
-  <main class="app" id="app"></main>
+  <div id="app" class="app">
+    <div class="loading-screen">
+      <div class="loading-logo">EB</div>
+      <h1>إكسبريس البرج</h1>
+      <p>جاري تشغيل النظام...</p>
+    </div>
+  </div>
 
   <script src="app.js"></script>
-
-  <script>
-    if ("serviceWorker" in navigator) {
-      window.addEventListener("load", function () {
-        navigator.serviceWorker
-          .register("sw.js")
-          .catch(function () {});
-      });
-    }
-  </script>
 
 </body>
 </html>
