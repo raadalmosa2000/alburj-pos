@@ -1,40 +1,748 @@
 document.addEventListener("DOMContentLoaded", () => {
-  // =========================================================
-  // سوبر ماركت البرج
-  // نظام نقاط بيع كامل
-  // =========================================================
+  "use strict";
 
+  /* =========================================
+     إكسبريس البرج
+     نظام المبيعات والمخزون والعملاء والديون
+  ========================================= */
+
+  const APP_NAME = "إكسبريس البرج";
   const CURRENCY = "ل.س";
 
-  const STORAGE = {
-    SALES: "alburj_sales",
-    PRODUCTS: "alburj_products",
-    CUSTOMERS: "alburj_customers",
-    DAILY: "alburj_daily",
-    SETTINGS: "alburj_settings"
+  const KEYS = {
+    products: "alburj_products_v3",
+    sales: "alburj_sales_v3",
+    customers: "alburj_customers_v3",
+    debts: "alburj_debts_v3",
+    payments: "alburj_payments_v3",
+    daily: "alburj_daily_v3"
   };
 
   let cart = [];
 
-  // =========================================================
-  // المنتجات الافتراضية
-  // =========================================================
+  /* =========================================
+     أدوات التخزين
+  ========================================= */
 
-  const defaultProducts = [
-    {
-      id: 1,
-      name: "عصير برتقال",
-      price: 5000,
-      stock: 50,
-      minStock: 5
-    },
-    {
-      id: 2,
-      name: "مياه معدنية",
-      price: 2000,
-      stock: 100,
-      minStock: 10
-    },
+  function readStorage(key, fallback = []) {
+    try {
+      const value = localStorage.getItem(key);
+
+      if (!value) {
+        return fallback;
+      }
+
+      const parsed = JSON.parse(value);
+
+      return parsed ?? fallback;
+    } catch (error) {
+      console.error("Storage error:", key, error);
+      return fallback;
+    }
+  }
+
+  function writeStorage(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+      return true;
+    } catch (error) {
+      console.error("Storage save error:", key, error);
+      alert("تعذر حفظ البيانات في المتصفح.");
+      return false;
+    }
+  }
+
+  function getProducts() {
+    return readStorage(KEYS.products, [
+      {
+        id: 1,
+        name: "عصير برتقال",
+        price: 5000,
+        stock: 20,
+        minStock: 5
+      },
+      {
+        id: 2,
+        name: "مياه معدنية",
+        price: 2000,
+        stock: 30,
+        minStock: 5
+      },
+      {
+        id: 3,
+        name: "بيبسي",
+        price: 4000,
+        stock: 25,
+        minStock: 5
+      },
+      {
+        id: 4,
+        name: "شيبس",
+        price: 3500,
+        stock: 20,
+        minStock: 5
+      },
+      {
+        id: 5,
+        name: "بسكويت",
+        price: 3000,
+        stock: 20,
+        minStock: 5
+      },
+      {
+        id: 6,
+        name: "حليب",
+        price: 6000,
+        stock: 15,
+        minStock: 5
+      }
+    ]);
+  }
+
+  function getSales() {
+    return readStorage(KEYS.sales, []);
+  }
+
+  function getCustomers() {
+    return readStorage(KEYS.customers, []);
+  }
+
+  function getDebts() {
+    return readStorage(KEYS.debts, []);
+  }
+
+  function getPayments() {
+    return readStorage(KEYS.payments, []);
+  }
+
+  function saveProducts(data) {
+    return writeStorage(KEYS.products, data);
+  }
+
+  function saveSales(data) {
+    return writeStorage(KEYS.sales, data);
+  }
+
+  function saveCustomers(data) {
+    return writeStorage(KEYS.customers, data);
+  }
+
+  function saveDebts(data) {
+    return writeStorage(KEYS.debts, data);
+  }
+
+  function savePayments(data) {
+    return writeStorage(KEYS.payments, data);
+  }
+
+  /* =========================================
+     أدوات عامة
+  ========================================= */
+
+  function money(value) {
+    return (
+      Number(value || 0).toLocaleString("ar-SY") +
+      " " +
+      CURRENCY
+    );
+  }
+
+  function number(value) {
+    return Number(value || 0);
+  }
+
+  function todayKey(date = new Date()) {
+    const d = new Date(date);
+
+    return [
+      d.getFullYear(),
+      String(d.getMonth() + 1).padStart(2, "0"),
+      String(d.getDate()).padStart(2, "0")
+    ].join("-");
+  }
+
+  function formatDate(date) {
+    return new Date(date).toLocaleDateString("ar-SY");
+  }
+
+  function formatTime(date) {
+    return new Date(date).toLocaleTimeString("ar-SY", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  }
+
+  function generateId(prefix = "ID") {
+    return (
+      prefix +
+      "-" +
+      Date.now() +
+      "-" +
+      Math.floor(Math.random() * 100000)
+    );
+  }
+
+  function generateInvoiceNumber() {
+    return (
+      "INV-" +
+      Date.now() +
+      "-" +
+      Math.floor(Math.random() * 999)
+    );
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  function getApp() {
+    return document.querySelector(".app");
+  }
+
+  /* =========================================
+     حساب ديون الزبائن
+  ========================================= */
+
+  function getCustomerDebt(customerId) {
+    const debts = getDebts();
+    const payments = getPayments();
+
+    const totalDebt = debts
+      .filter(
+        debt =>
+          String(debt.customerId) ===
+          String(customerId)
+      )
+      .reduce(
+        (sum, debt) =>
+          sum + number(debt.amount),
+        0
+      );
+
+    const totalPaid = payments
+      .filter(
+        payment =>
+          String(payment.customerId) ===
+          String(customerId)
+      )
+      .reduce(
+        (sum, payment) =>
+          sum + number(payment.amount),
+        0
+      );
+
+    return {
+      totalDebt,
+      totalPaid,
+      remaining: Math.max(
+        0,
+        totalDebt - totalPaid
+      )
+    };
+  }
+
+  function getTotalDebts() {
+    const customers = getCustomers();
+
+    return customers.reduce(
+      (sum, customer) =>
+        sum +
+        getCustomerDebt(customer.id).remaining,
+      0
+    );
+  }
+
+  /* =========================================
+     إحصائيات اليوم
+  ========================================= */
+
+  function getTodaySales() {
+    const key = todayKey();
+
+    return getSales().filter(
+      sale =>
+        todayKey(sale.createdAt) === key
+    );
+  }
+
+  function getTodayTotal() {
+    return getTodaySales().reduce(
+      (sum, sale) =>
+        sum + number(sale.total),
+      0
+    );
+  }
+
+  /* =========================================
+     بداية لوحة التحكم
+  ========================================= */
+
+  function showDashboard() {
+    const app = getApp();
+
+    if (!app) return;
+
+    const sales = getSales();
+    const products = getProducts();
+    const customers = getCustomers();
+
+    const todaySales = getTodaySales();
+    const todayTotal = getTodayTotal();
+    const totalDebts = getTotalDebts();
+
+    const stockCount = products.reduce(
+      (sum, product) =>
+        sum + number(product.stock),
+      0
+    );
+
+    app.innerHTML = `
+      <div class="page">
+
+        <header class="topbar">
+
+          <div class="brand">
+
+            <div class="brand-logo">
+              EB
+            </div>
+
+            <div class="brand-text">
+
+              <small>
+                نظام إدارة المتجر
+              </small>
+
+              <h1>
+                ${APP_NAME}
+              </h1>
+
+            </div>
+
+          </div>
+
+          <button
+            class="icon-button"
+            id="refreshDashboard"
+            title="تحديث"
+          >
+            ↻
+          </button>
+
+        </header>
+
+        <section class="hero">
+
+          <div>
+
+            <span class="hero-label">
+              إجمالي مبيعات اليوم
+            </span>
+
+            <h2>
+              ${money(todayTotal)}
+            </h2>
+
+            <p>
+              ${todaySales.length}
+              فاتورة اليوم
+            </p>
+
+          </div>
+
+          <div class="seal">
+            EB<br>
+            EXPRESS
+          </div>
+
+        </section>
+
+        <section class="stats">
+
+          <div class="stat">
+            <span>مبيعات اليوم</span>
+            <strong>
+              ${money(todayTotal)}
+            </strong>
+            <small>ليرة سورية</small>
+          </div>
+
+          <div class="stat">
+            <span>فواتير اليوم</span>
+            <strong>
+              ${todaySales.length}
+            </strong>
+            <small>فاتورة</small>
+          </div>
+
+          <div class="stat">
+            <span>الزبائن</span>
+            <strong>
+              ${customers.length}
+            </strong>
+            <small>زبون</small>
+          </div>
+
+          <div class="stat">
+            <span>ديون الزبائن</span>
+            <strong>
+              ${money(totalDebts)}
+            </strong>
+            <small>المتبقي</small>
+          </div>
+
+        </section>
+
+        <section class="section">
+
+          <div class="section-heading">
+            <h3>الوصول السريع</h3>
+            <span>إكسبريس البرج</span>
+          </div>
+
+          <div class="quickgrid">
+
+            <button
+              class="quick-card"
+              id="newSaleButton"
+            >
+              <span class="quick-icon">＋</span>
+              <strong>بيع جديد</strong>
+              <small>إنشاء فاتورة</small>
+            </button>
+
+            <button
+              class="quick-card"
+              id="productsButton"
+            >
+              <span class="quick-icon">▦</span>
+              <strong>المنتجات والمخزون</strong>
+              <small>إضافة وتعديل وجرد</small>
+            </button>
+
+            <button
+              class="quick-card"
+              id="customersButton"
+            >
+              <span class="quick-icon">♙</span>
+              <strong>الزبائن</strong>
+              <small>العملاء ومشترياتهم</small>
+            </button>
+
+            <button
+              class="quick-card"
+              id="debtsButton"
+            >
+              <span class="quick-icon">د</span>
+              <strong>ديون الزبائن</strong>
+              <small>
+                ${money(totalDebts)}
+              </small>
+            </button>
+
+          </div>
+
+        </section>
+
+        <section class="section">
+
+          <div class="section-heading">
+
+            <h3>
+              آخر المبيعات
+            </h3>
+
+            <button id="viewAllSales">
+              عرض الكل
+            </button>
+
+          </div>
+
+          <div class="activity-list">
+
+            ${
+              sales.length === 0
+                ? `
+                  <div class="empty-state">
+                    <span>🧾</span>
+                    <strong>
+                      لا توجد مبيعات بعد
+                    </strong>
+                    <small>
+                      ستظهر الفواتير هنا بعد أول عملية بيع.
+                    </small>
+                  </div>
+                `
+                : sales
+                    .slice()
+                    .reverse()
+                    .slice(0, 5)
+                    .map(createSaleCard)
+                    .join("")
+            }
+
+          </div>
+
+        </section>
+
+      </div>
+
+      ${createBottomNavigation("home")}
+    `;
+
+    document
+      .getElementById("refreshDashboard")
+      ?.addEventListener(
+        "click",
+        showDashboard
+      );
+
+    document
+      .getElementById("newSaleButton")
+      ?.addEventListener(
+        "click",
+        showSalesScreen
+      );
+
+    document
+      .getElementById("productsButton")
+      ?.addEventListener(
+        "click",
+        showProducts
+      );
+
+    document
+      .getElementById("customersButton")
+      ?.addEventListener(
+        "click",
+        showCustomers
+      );
+
+    document
+      .getElementById("debtsButton")
+      ?.addEventListener(
+        "click",
+        showDebts
+      );
+
+    document
+      .getElementById("viewAllSales")
+      ?.addEventListener(
+        "click",
+        showSalesHistory
+      );
+
+    setupNavigation();
+  }
+
+  /* =========================================
+     بطاقة المبيعات
+  ========================================= */
+
+  function createSaleCard(sale) {
+    return `
+      <button
+        class="sale-card"
+        data-open-invoice="${escapeHtml(
+          sale.invoiceNumber
+        )}"
+      >
+
+        <div>
+
+          <strong>
+            ${escapeHtml(
+              sale.invoiceNumber
+            )}
+          </strong>
+
+          <small>
+            ${formatDate(
+              sale.createdAt
+            )}
+            -
+            ${formatTime(
+              sale.createdAt
+            )}
+          </small>
+
+          <small>
+            ${
+              sale.customerName
+                ? "الزبون: " +
+                  escapeHtml(
+                    sale.customerName
+                  )
+                : "زبون نقدي"
+            }
+          </small>
+
+        </div>
+
+        <div class="sale-total">
+          ${money(sale.total)}
+        </div>
+
+      </button>
+    `;
+  }
+
+  /* =========================================
+     فتح الفاتورة من البطاقات
+  ========================================= */
+
+  function bindInvoiceButtons() {
+    document
+      .querySelectorAll(
+        "[data-open-invoice]"
+      )
+      .forEach(button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const invoice =
+              button.dataset.openInvoice;
+
+            const sale =
+              getSales().find(
+                item =>
+                  item.invoiceNumber ===
+                  invoice
+              );
+
+            if (sale) {
+              showInvoice(sale);
+            }
+          }
+        );
+
+      });
+  }
+
+  /* =========================================
+     التنقل السفلي
+  ========================================= */
+
+  function createBottomNavigation(active) {
+    return `
+      <nav class="bottom-nav">
+
+        <button
+          class="nav-item ${
+            active === "home"
+              ? "active"
+              : ""
+          }"
+          data-nav="home"
+        >
+          <span>⌂</span>
+          <small>الرئيسية</small>
+        </button>
+
+        <button
+          class="nav-item ${
+            active === "sales"
+              ? "active"
+              : ""
+          }"
+          data-nav="sales"
+        >
+          <span>▣</span>
+          <small>المبيعات</small>
+        </button>
+
+        <button
+          class="nav-item main-sale ${
+            active === "sale"
+              ? "active"
+              : ""
+          }"
+          data-nav="sale"
+        >
+          <span>＋</span>
+          <small>بيع</small>
+        </button>
+
+        <button
+          class="nav-item ${
+            active === "products"
+              ? "active"
+              : ""
+          }"
+          data-nav="products"
+        >
+          <span>□</span>
+          <small>المنتجات</small>
+        </button>
+
+        <button
+          class="nav-item ${
+            active === "more"
+              ? "active"
+              : ""
+          }"
+          data-nav="more"
+        >
+          <span>☰</span>
+          <small>المزيد</small>
+        </button>
+
+      </nav>
+    `;
+  }
+
+  function setupNavigation() {
+    document
+      .querySelectorAll("[data-nav]")
+      .forEach(button => {
+
+        button.addEventListener(
+          "click",
+          () => {
+
+            const page =
+              button.dataset.nav;
+
+            if (page === "home") {
+              showDashboard();
+            }
+
+            if (page === "sales") {
+              showSalesHistory();
+            }
+
+            if (page === "sale") {
+              showSalesScreen();
+            }
+
+            if (page === "products") {
+              showProducts();
+            }
+
+            if (page === "more") {
+              showMore();
+            }
+
+          }
+        );
+
+      });
+  }
+
+  /* =========================================
+     تشغيل التطبيق
+  ========================================= */
+
+  showDashboard();
+
+});    },
     {
       id: 3,
       name: "بيبسي",
