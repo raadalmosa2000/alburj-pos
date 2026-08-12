@@ -1,40 +1,216 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#090806">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>البرج</title>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, viewport-fit=cover"
+  >
+
+  <meta name="theme-color" content="#173f35">
+
+  <meta
+    name="apple-mobile-web-app-capable"
+    content="yes"
+  >
+
+  <meta
+    name="apple-mobile-web-app-title"
+    content="البرج"
+  >
+
+  <title>سوبر ماركت البرج</title>
+
+  <link rel="manifest" href="manifest.json">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css">
 </head>
+
 <body>
-<div class="app">
-<header class="topbar">
-  <div><span class="kicker">نظام البرج</span><h1>لوحة التحكم</h1></div>
-  <button class="bell">♢</button>
-</header>
 
-<section class="hero">
-  <div><span>أهلًا بك</span><h2>سوبر ماركت البرج</h2><p>إدارة مبيعاتك ومخزونك من مكان واحد.</p></div>
-  <div class="seal">AL<br>BURJ</div>
-</section>
+  <div class="app" id="app">
 
-<section class="stats">
-  <div class="stat"><span>مبيعات اليوم</span><b>0.00</b><small>ريال</small></div>
-  <div class="stat"><span>الفواتير</span><b>0</b><small>فاتورة</small></div>
-  <div class="stat"><span>الأرباح</span><b>0.00</b><small>ريال</small></div>
-  <div class="stat"><span>المخزون</span><b>0</b><small>تنبيه</small></div>
-</section>
+    <header class="topbar">
 
-<section class="quick">
-  <div class="title"><h3>اختصارات</h3><span>اليوم</span></div>
-  <div class="quickgrid">
-    <button><strong>＋</strong><span>بيع جديد</span></button>
-    <button><strong>＋</strong><span>منتج جديد</span></button>
-    <button><strong>♧</strong><span>عميل جديد</span></button>
-    <button><strong>▥</strong><span>جرد المخزون</span></button>
+      <div>
+        <span class="kicker">نظام البرج</span>
+        <h1>لوحة التحكم</h1>
+      </div>
+
+      <button class="icon-button" id="notificationButton">
+        ♢
+      </button>
+
+    </header>
+
+
+    <main>
+
+      <section class="hero">
+
+        <div>
+          <span class="hero-label">أهلًا بك</span>
+
+          <h2>سوبر ماركت البرج</h2>
+
+          <p>
+            إدارة مبيعاتك ومخزونك من مكان واحد.
+          </p>
+        </div>
+
+        <div class="seal">
+          AL<br>
+          BURJ
+        </div>
+
+      </section>
+
+
+      <section class="stats">
+
+        <div class="stat">
+          <span>مبيعات اليوم</span>
+          <strong id="todaySales">٠</strong>
+          <small>ل.س</small>
+        </div>
+
+        <div class="stat">
+          <span>الفواتير</span>
+          <strong id="todayInvoices">٠</strong>
+          <small>فاتورة</small>
+        </div>
+
+        <div class="stat">
+          <span>الأرباح</span>
+          <strong id="todayProfit">٠</strong>
+          <small>ل.س</small>
+        </div>
+
+        <div class="stat">
+          <span>المخزون</span>
+          <strong id="stockCount">٠</strong>
+          <small>منتج</small>
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="section-heading">
+          <h3>اختصارات</h3>
+          <span>اليوم</span>
+        </div>
+
+        <div class="quickgrid">
+
+          <button class="quick-card" id="newSaleButton">
+            <span class="quick-icon">＋</span>
+            <strong>بيع جديد</strong>
+            <small>إنشاء فاتورة</small>
+          </button>
+
+          <button class="quick-card" id="newProductButton">
+            <span class="quick-icon">＋</span>
+            <strong>منتج جديد</strong>
+            <small>إضافة للمخزون</small>
+          </button>
+
+          <button class="quick-card" id="newCustomerButton">
+            <span class="quick-icon">♧</span>
+            <strong>عميل جديد</strong>
+            <small>إضافة عميل</small>
+          </button>
+
+          <button class="quick-card" id="inventoryButton">
+            <span class="quick-icon">▥</span>
+            <strong>المخزون</strong>
+            <small>إدارة المنتجات</small>
+          </button>
+
+        </div>
+
+      </section>
+
+
+      <section class="section">
+
+        <div class="section-heading">
+          <h3>آخر العمليات</h3>
+          <button id="viewAllSales">عرض الكل</button>
+        </div>
+
+        <div id="recentActivity" class="activity-list">
+
+          <div class="empty-state">
+            <span>🧾</span>
+            <strong>لا توجد عمليات بعد</strong>
+            <small>ستظهر المبيعات هنا بعد إنشاء أول فاتورة.</small>
+          </div>
+
+        </div>
+
+      </section>
+
+    </main>
+
+
+    <nav class="bottom-nav">
+
+      <button class="nav-item active" id="homeNav">
+        <span>⌂</span>
+        <small>الرئيسية</small>
+      </button>
+
+      <button class="nav-item" id="salesNav">
+        <span>▣</span>
+        <small>المبيعات</small>
+      </button>
+
+      <button class="nav-item main-sale" id="sellNav">
+        <span>＋</span>
+        <small>بيع</small>
+      </button>
+
+      <button class="nav-item" id="productsNav">
+        <span>□</span>
+        <small>المنتجات</small>
+      </button>
+
+      <button class="nav-item" id="moreNav">
+        <span>☰</span>
+        <small>المزيد</small>
+      </button>
+
+    </nav>
+
+  </div>
+
+
+  <script src="app.js"></script>
+
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("sw.js").catch(function () {});
+      });
+    }
+  </script>
+
+</body>
+
+</html>    <button><strong>▥</strong><span>جرد المخزون</span></button>
   </div>
 </section>
 
