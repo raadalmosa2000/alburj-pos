@@ -1,59 +1,60 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const buttons = document.querySelectorAll("button");
+document.addEventListener("DOMContentLoaded", function () {
 
-  buttons.forEach((button) => {
-    button.addEventListener("click", () => {
-      const text = button.innerText.trim();
+  document.querySelectorAll("button").forEach(function (button) {
 
-      if (text.includes("بيع جديد") || text.includes("بيع")) {
-        showSalesScreen();
-      } else if (text.includes("منتج جديد")) {
-        alert("شاشة إضافة المنتجات ستكون هنا");
-      } else if (text.includes("عميل جديد")) {
-        alert("شاشة إضافة العملاء ستكون هنا");
-      } else if (text.includes("جرد المخزون")) {
-        alert("شاشة جرد المخزون ستكون هنا");
-      } else if (text.includes("المبيعات")) {
-        showSalesScreen();
-      } else if (text.includes("المنتجات")) {
-        alert("قسم المنتجات");
-      } else if (text.includes("المزيد")) {
-        alert("المزيد من خيارات النظام");
+    button.addEventListener("click", function () {
+
+      var text = button.innerText.trim();
+
+      if (
+        text.indexOf("بيع جديد") !== -1 ||
+        text.indexOf("بيع") !== -1
+      ) {
+        showSales();
       }
+
+      else if (text.indexOf("المبيعات") !== -1) {
+        showSales();
+      }
+
+      else if (text.indexOf("منتج جديد") !== -1) {
+        alert("قسم المنتجات قيد التطوير");
+      }
+
+      else if (text.indexOf("عميل جديد") !== -1) {
+        alert("قسم العملاء قيد التطوير");
+      }
+
+      else if (text.indexOf("جرد المخزون") !== -1) {
+        alert("قسم المخزون قيد التطوير");
+      }
+
     });
+
   });
+
 });
 
-function showSalesScreen() {
-  const app = document.querySelector(".app");
+
+function showSales() {
+
+  var app = document.querySelector(".app");
 
   app.innerHTML = `
-    <header class="topbar">
-      <div>
-        <span class="kicker">نظام البرج</span>
-        <h1>بيع جديد</h1>
-      </div>
-      <button id="closeSale">×</button>
-    </header>
+    <div style="padding:20px;">
 
-    <section class="sales-screen" style="padding:20px;">
-
-      <div class="title">
-        <h3>المنتجات</h3>
-        <span>فاتورة جديدة</span>
-      </div>
+      <h1>بيع جديد</h1>
 
       <input
-        id="productSearch"
-        type="text"
+        id="search"
         placeholder="ابحث عن منتج..."
         style="
           width:100%;
-          box-sizing:border-box;
           padding:14px;
-          border-radius:12px;
+          box-sizing:border-box;
+          margin:15px 0;
+          border-radius:10px;
           border:1px solid #ddd;
-          margin-bottom:15px;
           font-size:16px;
         "
       >
@@ -63,117 +64,147 @@ function showSalesScreen() {
         <button
           class="product"
           data-name="مياه البرج"
-          data-price="1.50"
-          style="display:block;width:100%;padding:15px;margin-bottom:10px;border:1px solid #ddd;border-radius:12px;"
+          data-price="1500"
+          style="
+            display:block;
+            width:100%;
+            padding:15px;
+            margin-bottom:10px;
+            border:1px solid #ddd;
+            border-radius:12px;
+            font-size:16px;
+          "
         >
-          مياه البرج - 1.50 ريال
+          مياه البرج - 1,500 ل.س
         </button>
 
         <button
           class="product"
           data-name="عصير برتقال"
-          data-price="3.00"
-          style="display:block;width:100%;padding:15px;margin-bottom:10px;border:1px solid #ddd;border-radius:12px;"
+          data-price="5000"
+          style="
+            display:block;
+            width:100%;
+            padding:15px;
+            margin-bottom:10px;
+            border:1px solid #ddd;
+            border-radius:12px;
+            font-size:16px;
+          "
         >
-          عصير برتقال - 3.00 ريال
+          عصير برتقال - 5,000 ل.س
         </button>
 
         <button
           class="product"
           data-name="خبز"
-          data-price="2.00"
-          style="display:block;width:100%;padding:15px;margin-bottom:10px;border:1px solid #ddd;border-radius:12px;"
+          data-price="2000"
+          style="
+            display:block;
+            width:100%;
+            padding:15px;
+            margin-bottom:10px;
+            border:1px solid #ddd;
+            border-radius:12px;
+            font-size:16px;
+          "
         >
-          خبز - 2.00 ريال
+          خبز - 2,000 ل.س
         </button>
 
         <button
           class="product"
           data-name="حليب"
-          data-price="5.50"
-          style="display:block;width:100%;padding:15px;margin-bottom:10px;border:1px solid #ddd;border-radius:12px;"
+          data-price="7000"
+          style="
+            display:block;
+            width:100%;
+            padding:15px;
+            margin-bottom:10px;
+            border:1px solid #ddd;
+            border-radius:12px;
+            font-size:16px;
+          "
         >
-          حليب - 5.50 ريال
+          حليب - 7,000 ل.س
         </button>
 
       </div>
 
-      <section style="margin-top:25px;">
 
-        <div class="title">
-          <h3>السلة</h3>
-        </div>
+      <h2>السلة</h2>
 
-        <div id="cart">
-          <div class="empty">السلة فارغة</div>
-        </div>
+      <div id="cart">
+        السلة فارغة
+      </div>
 
-        <div
-          style="
-            margin-top:20px;
-            padding:18px;
-            border-radius:16px;
-            background:#f5f5f5;
-          "
-        >
 
-          <div
-            style="
-              display:flex;
-              justify-content:space-between;
-              font-size:20px;
-              font-weight:bold;
-            "
-          >
-            <span>الإجمالي</span>
-            <span>
-              <span id="total">0.00</span> ريال
-            </span>
-          </div>
+      <h2 style="margin-top:20px;">
+        الإجمالي:
+        <span id="total">0</span>
+        ل.س
+      </h2>
 
-          <button
-            id="completeSale"
-            style="
-              width:100%;
-              margin-top:15px;
-              padding:15px;
-              border:0;
-              border-radius:12px;
-              font-size:17px;
-              font-weight:bold;
-            "
-          >
-            إتمام البيع
-          </button>
 
-        </div>
+      <button
+        id="complete"
+        style="
+          width:100%;
+          padding:16px;
+          margin-top:15px;
+          border:0;
+          border-radius:12px;
+          font-size:17px;
+          font-weight:bold;
+        "
+      >
+        إتمام البيع
+      </button>
 
-      </section>
 
-    </section>
+      <button
+        id="back"
+        style="
+          width:100%;
+          padding:15px;
+          margin-top:10px;
+          border:0;
+          border-radius:12px;
+          font-size:16px;
+        "
+      >
+        العودة
+      </button>
+
+    </div>
   `;
 
-  const cart = [];
-  const cartElement = document.getElementById("cart");
-  const totalElement = document.getElementById("total");
 
-  document.getElementById("closeSale").addEventListener("click", () => {
-    location.reload();
-  });
+  var cart = [];
 
-  document.querySelectorAll(".product").forEach((button) => {
-    button.addEventListener("click", () => {
 
-      const name = button.dataset.name;
-      const price = Number(button.dataset.price);
+  document.querySelectorAll(".product").forEach(function (product) {
 
-      const existing = cart.find(
-        (item) => item.name === name
-      );
+    product.addEventListener("click", function () {
 
-      if (existing) {
-        existing.qty += 1;
-      } else {
+      var name =
+        product.getAttribute("data-name");
+
+      var price =
+        Number(product.getAttribute("data-price"));
+
+
+      var found =
+        cart.find(function (item) {
+          return item.name === name;
+        });
+
+
+      if (found) {
+        found.qty++;
+      }
+
+      else {
         cart.push({
           name: name,
           price: price,
@@ -181,140 +212,217 @@ function showSalesScreen() {
         });
       }
 
-      renderCart();
+
+      drawCart();
+
     });
+
   });
 
-  function renderCart() {
+
+  function drawCart() {
+
+    var cartBox =
+      document.getElementById("cart");
+
 
     if (cart.length === 0) {
-      cartElement.innerHTML =
-        `<div class="empty">السلة فارغة</div>`;
 
-      totalElement.textContent = "0.00";
+      cartBox.innerHTML =
+        "السلة فارغة";
+
+      document.getElementById("total").innerText =
+        "0";
+
       return;
     }
 
-    cartElement.innerHTML = cart.map((item) => {
 
-      const itemTotal = item.price * item.qty;
+    var total = 0;
 
-      return `
-        <div
-          style="
-            display:flex;
-            justify-content:space-between;
-            align-items:center;
-            padding:12px 0;
-            border-bottom:1px solid #ddd;
-          "
-        >
-          <div>
-            <strong>${item.name}</strong>
-            <div>
-              ${item.qty} × ${item.price.toFixed(2)} ريال
-            </div>
+
+    cartBox.innerHTML =
+      cart.map(function (item) {
+
+        var itemTotal =
+          item.price * item.qty;
+
+        total += itemTotal;
+
+
+        return `
+          <div
+            style="
+              padding:12px 5px;
+              border-bottom:1px solid #ddd;
+            "
+          >
+
+            <strong>
+              ${item.name}
+            </strong>
+
+            <br>
+
+            ${item.qty}
+            ×
+            ${formatMoney(item.price)}
+            ل.س
+
+            =
+
+            <strong>
+              ${formatMoney(itemTotal)}
+              ل.س
+            </strong>
+
           </div>
+        `;
 
-          <strong>
-            ${itemTotal.toFixed(2)} ريال
-          </strong>
-        </div>
-      `;
+      }).join("");
 
-    }).join("");
 
-    const total = cart.reduce(
-      (sum, item) =>
-        sum + (item.price * item.qty),
-      0
-    );
+    document.getElementById("total").innerText =
+      formatMoney(total);
 
-    totalElement.textContent =
-      total.toFixed(2);
   }
 
-  document
-    .getElementById("productSearch")
-    .addEventListener("input", (event) => {
-
-      const search =
-        event.target.value
-          .trim()
-          .toLowerCase();
-
-      document
-        .querySelectorAll(".product")
-        .forEach((button) => {
-
-          const name =
-            button.dataset.name
-              .toLowerCase();
-
-          button.style.display =
-            name.includes(search)
-              ? "block"
-              : "none";
-        });
-    });
 
   document
-    .getElementById("completeSale")
-    .addEventListener("click", () => {
+    .getElementById("complete")
+    .addEventListener("click", function () {
 
       if (cart.length === 0) {
-        alert("أضف منتجًا إلى السلة أولًا");
+
+        alert("أضف منتجًا أولًا");
+
         return;
       }
 
-      showInvoice(cart, totalElement.textContent);
+
+      showInvoice(cart);
+
     });
+
+
+  document
+    .getElementById("back")
+    .addEventListener("click", function () {
+
+      location.reload();
+
+    });
+
+
+  document
+    .getElementById("search")
+    .addEventListener("input", function () {
+
+      var value =
+        this.value
+          .toLowerCase()
+          .trim();
+
+
+      document
+        .querySelectorAll(".product")
+        .forEach(function (product) {
+
+          var name =
+            product
+              .getAttribute("data-name")
+              .toLowerCase();
+
+
+          product.style.display =
+            name.indexOf(value) !== -1
+              ? "block"
+              : "none";
+
+        });
+
+    });
+
 }
 
-function showInvoice(cart, total) {
 
-  const invoiceNumber =
-    "INV-" +
-    Date.now();
+function showInvoice(cart) {
 
-  const now =
+  var invoiceNumber =
+    "INV-" + Date.now();
+
+
+  var now =
     new Date();
 
-  const date =
-    now.toLocaleDateString("ar-SA");
 
-  const time =
+  var date =
+    now.toLocaleDateString("ar-SY");
+
+
+  var time =
     now.toLocaleTimeString(
-      "ar-SA",
+      "ar-SY",
       {
         hour: "2-digit",
         minute: "2-digit"
       }
     );
 
-  const invoiceItems =
-    cart.map((item) => {
 
-      const itemTotal =
+  var total = 0;
+
+
+  var rows =
+    cart.map(function (item) {
+
+      var sum =
         item.price * item.qty;
+
+
+      total += sum;
+
 
       return `
         <tr>
 
-          <td style="padding:8px;border-bottom:1px solid #ddd;">
+          <td
+            style="
+              padding:8px;
+              border-bottom:1px solid #ddd;
+            "
+          >
             ${item.name}
           </td>
 
-          <td style="padding:8px;border-bottom:1px solid #ddd;">
+
+          <td
+            style="
+              padding:8px;
+              border-bottom:1px solid #ddd;
+            "
+          >
             ${item.qty}
           </td>
 
-          <td style="padding:8px;border-bottom:1px solid #ddd;">
-            ${item.price.toFixed(2)}
+
+          <td
+            style="
+              padding:8px;
+              border-bottom:1px solid #ddd;
+            "
+          >
+            ${formatMoney(item.price)}
           </td>
 
-          <td style="padding:8px;border-bottom:1px solid #ddd;">
-            ${itemTotal.toFixed(2)}
+
+          <td
+            style="
+              padding:8px;
+              border-bottom:1px solid #ddd;
+            "
+          >
+            ${formatMoney(sum)}
           </td>
 
         </tr>
@@ -322,43 +430,69 @@ function showInvoice(cart, total) {
 
     }).join("");
 
+
   document.querySelector(".app").innerHTML = `
 
     <div
-      id="invoice"
       style="
         padding:20px;
         max-width:600px;
         margin:auto;
-        background:#fff;
+        background:white;
         min-height:100vh;
       "
     >
 
-      <div style="text-align:center;">
+      <div
+        style="
+          text-align:center;
+        "
+      >
 
-        <h1>سوبر ماركت البرج</h1>
+        <h1>
+          سوبر ماركت البرج
+        </h1>
 
-        <p>فاتورة بيع</p>
+        <h2>
+          فاتورة بيع
+        </h2>
+
+        <p>
+          الليرة السورية
+        </p>
 
       </div>
 
+
       <hr>
 
+
       <p>
-        <strong>رقم الفاتورة:</strong>
+        <strong>
+          رقم الفاتورة:
+        </strong>
+
         ${invoiceNumber}
       </p>
 
+
       <p>
-        <strong>التاريخ:</strong>
+        <strong>
+          التاريخ:
+        </strong>
+
         ${date}
       </p>
 
+
       <p>
-        <strong>الوقت:</strong>
+        <strong>
+          الوقت:
+        </strong>
+
         ${time}
       </p>
+
 
       <table
         style="
@@ -372,19 +506,19 @@ function showInvoice(cart, total) {
 
           <tr>
 
-            <th style="padding:8px;border-bottom:1px solid #ccc;">
+            <th style="padding:8px;">
               المنتج
             </th>
 
-            <th style="padding:8px;border-bottom:1px solid #ccc;">
+            <th style="padding:8px;">
               الكمية
             </th>
 
-            <th style="padding:8px;border-bottom:1px solid #ccc;">
+            <th style="padding:8px;">
               السعر
             </th>
 
-            <th style="padding:8px;border-bottom:1px solid #ccc;">
+            <th style="padding:8px;">
               المجموع
             </th>
 
@@ -392,34 +526,46 @@ function showInvoice(cart, total) {
 
         </thead>
 
+
         <tbody>
-          ${invoiceItems}
+
+          ${rows}
+
         </tbody>
 
       </table>
 
+
       <hr>
 
-      <h2 style="text-align:center;">
-        الإجمالي:
-        ${total}
-        ريال
-      </h2>
 
-      <label
+      <h2
         style="
-          display:block;
-          margin:15px 0 8px;
+          text-align:center;
+          margin:20px 0;
         "
       >
+
+        الإجمالي:
+
+        ${formatMoney(total)}
+
+        ل.س
+
+      </h2>
+
+
+      <label>
         طريقة الدفع
       </label>
 
+
       <select
-        id="paymentMethod"
+        id="payment"
         style="
           width:100%;
           padding:14px;
+          margin-top:10px;
           border-radius:10px;
           font-size:16px;
         "
@@ -435,12 +581,13 @@ function showInvoice(cart, total) {
 
       </select>
 
+
       <button
-        id="printInvoice"
+        id="print"
         style="
           width:100%;
-          padding:15px;
-          margin-top:15px;
+          padding:16px;
+          margin-top:20px;
           border:0;
           border-radius:12px;
           font-size:17px;
@@ -449,11 +596,12 @@ function showInvoice(cart, total) {
         طباعة الفاتورة
       </button>
 
+
       <button
-        id="newSale"
+        id="new"
         style="
           width:100%;
-          padding:15px;
+          padding:16px;
           margin-top:10px;
           border:0;
           border-radius:12px;
@@ -464,231 +612,32 @@ function showInvoice(cart, total) {
       </button>
 
     </div>
+
   `;
 
+
   document
-    .getElementById("printInvoice")
-    .addEventListener("click", () => {
+    .getElementById("print")
+    .addEventListener("click", function () {
 
       window.print();
 
     });
 
+
   document
-    .getElementById("newSale")
-    .addEventListener("click", () => {
+    .getElementById("new")
+    .addEventListener("click", function () {
 
       location.reload();
 
     });
-}    <section class="sales-screen">
-      <div class="title">
-        <h3>المنتجات</h3>
-        <span>الفاتورة الجديدة</span>
-      </div>
 
-      <input
-        id="productSearch"
-        type="text"
-        placeholder="ابحث عن منتج..."
-        style="width:100%;box-sizing:border-box;padding:14px;border-radius:12px;border:1px solid #ddd;margin-bottom:15px;font-size:16px;"
-      >
+}
 
-      <div id="products">
-        <button class="product" data-name="مياه البرج" data-price="1.50">
-          مياه البرج - 1.50 ريال
-        </button>
 
-        <button class="product" data-name="عصير برتقال" data-price="3.00">
-          عصير برتقال - 3.00 ريال
-        </button>
+function formatMoney(number) {
 
-        <button class="product" data-name="خبز" data-price="2.00">
-          خبز - 2.00 ريال
-        </button>
+  return Number(number).toLocaleString("ar-SY");
 
-        <button class="product" data-name="حليب" data-price="5.50">
-          حليب - 5.50 ريال
-        </button>
-      </div>
-
-      <section style="margin-top:20px;">
-        <div class="title">
-          <h3>السلة</h3>
-        </div>
-
-        <div id="cart">
-          <div class="empty">السلة فارغة</div>
-        </div>
-
-        <div style="margin-top:20px;padding:18px;border-radius:16px;background:#f5f5f5;">
-          <div style="display:flex;justify-content:space-between;font-size:20px;font-weight:bold;">
-            <span>الإجمالي</span>
-            <span><span id="total">0.00</span> ريال</span>
-          </div>
-
-          <button
-            id="completeSale"
-            style="width:100%;margin-top:15px;padding:15px;border:0;border-radius:12px;font-size:17px;font-weight:bold;"
-          >
-            إتمام البيع
-          </button>
-        </div>
-      </section>
-    </section>
-  `;
-
-  const cart = [];
-  const cartElement = document.getElementById("cart");
-  const totalElement = document.getElementById("total");
-
-  document.querySelectorAll(".product").forEach((button) => {
-    button.addEventListener("click", () => {
-      const name = button.dataset.name;
-      const price = Number(button.dataset.price);
-
-      const existing = cart.find((item) => item.name === name);
-
-      if (existing) {
-        existing.qty++;
-      } else {
-        cart.push({ name, price, qty: 1 });
-      }
-
-      renderCart();
-    });
-  });
-
-  function renderCart() {
-    if (cart.length === 0) {
-      cartElement.innerHTML = `<div class="empty">السلة فارغة</div>`;
-      totalElement.textContent = "0.00";
-      return;
-    }
-
-    cartElement.innerHTML = cart.map((item) => `
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0;border-bottom:1px solid #ddd;">
-        <div>
-          <strong>${item.name}</strong>
-          <div>${item.qty} × ${item.price.toFixed(2)} ريال</div>
-        </div>
-        <strong>${(item.qty * item.price).toFixed(2)} ريال</strong>
-      </div>
-    `).join("");
-
-    const total = cart.reduce(
-      (sum, item) => sum + item.price * item.qty,
-      0
-    );
-
-    totalElement.textContent = total.toFixed(2);
-  }
-
-  document.getElementById("completeSale").addEventListener("click", () => {
-  if (cart.length === 0) {
-    alert("أضف منتجًا إلى السلة أولًا");
-    return;
-  }
-
-  const invoiceNumber = "INV-" + Date.now();
-  const now = new Date();
-
-  const date = now.toLocaleDateString("ar-SA");
-  const time = now.toLocaleTimeString("ar-SA", {
-    hour: "2-digit",
-    minute: "2-digit"
-  });
-
-  const total = totalElement.textContent;
-
-  const invoiceItems = cart.map(item => `
-    <tr>
-      <td>${item.name}</td>
-      <td>${item.qty}</td>
-      <td>${item.price.toFixed(2)}</td>
-      <td>${(item.qty * item.price).toFixed(2)}</td>
-    </tr>
-  `).join("");
-
-  document.querySelector(".app").innerHTML = `
-    <div style="padding:20px;max-width:600px;margin:auto;background:#fff;min-height:100vh;">
-      
-      <div style="text-align:center;">
-        <h1>سوبر ماركت البرج</h1>
-        <p>فاتورة بيع</p>
-      </div>
-
-      <hr>
-
-      <p><strong>رقم الفاتورة:</strong> ${invoiceNumber}</p>
-      <p><strong>التاريخ:</strong> ${date}</p>
-      <p><strong>الوقت:</strong> ${time}</p>
-
-      <table style="width:100%;border-collapse:collapse;text-align:right;">
-        <thead>
-          <tr>
-            <th style="padding:8px;border-bottom:1px solid #ccc;">المنتج</th>
-            <th style="padding:8px;border-bottom:1px solid #ccc;">الكمية</th>
-            <th style="padding:8px;border-bottom:1px solid #ccc;">السعر</th>
-            <th style="padding:8px;border-bottom:1px solid #ccc;">المجموع</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          ${invoiceItems}
-        </tbody>
-      </table>
-
-      <hr>
-
-      <h2 style="text-align:center;">
-        الإجمالي: ${total} ريال
-      </h2>
-
-      <label style="display:block;margin:15px 0 8px;">
-        طريقة الدفع
-      </label>
-
-      <select id="paymentMethod"
-        style="width:100%;padding:14px;border-radius:10px;font-size:16px;">
-        <option value="نقدي">نقدي</option>
-        <option value="بطاقة">بطاقة</option>
-      </select>
-
-      <button id="printInvoice"
-        style="width:100%;padding:15px;margin-top:15px;border:0;border-radius:12px;font-size:17px;">
-        طباعة الفاتورة
-      </button>
-
-      <button onclick="location.reload()"
-        style="width:100%;padding:15px;margin-top:10px;border:0;border-radius:12px;font-size:17px;">
-        بيع جديد
-      </button>
-
-    </div>
-  `;
-
-  document.getElementById("printInvoice").addEventListener("click", () => {
-    window.print();
-  });
-});
-    if (cart.length === 0) {
-    
-      return;
-    }
-
-    alert( " +
-      totalElement.textContent +
-      " ريال"
-    );
-  });
-
-  .addEventListener("input", (event) => {
-    const search = event.target.value.trim().toLowerCase();
-
-    document.querySelectorAll(".product").forEach((button) => {
-      const name = button.dataset.name.toLowerCase();
-      button.style.display = name.includes(search) ? "block" : "none";
-    });
-  });
 }
