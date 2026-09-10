@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معاينة مشروع تطبيق المناوبات</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for Interactivity -->
+    <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; }
+        .mobile-mockup { width: 375px; height: 812px; background: #f5f7fa; border-radius: 40px; border: 8px solid #111; overflow-y: auto; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25); position: relative; margin: 0 auto; }
+        .mobile-mockup::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body x-data="appData()" class="text-gray-800">
+
+    <!-- Header Navigation -->
+    <div class="bg-gray-900 text-white p-4 shadow-lg sticky top-0 z-50">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <h1 class="text-xl font-bold">Duty App - معاينة سريعة</h1>
+            <div class="flex gap-4">
+                <button @click="view = 'mobile'" :class="view === 'mobile' ? 'bg-blue-600' : 'bg-gray-700'" class="px-4 py-2 rounded-lg transition">
+                    <i class="fa-solid fa-mobile-screen mr-2"></i> تطبيق الهاتف
+                </button>
+                <button @click="view = 'admin'" :class="view === 'admin' ? 'bg-blue-600' : 'bg-gray-700'" class="px-4 py-2 rounded-lg transition">
+                    <i class="fa-solid fa-desktop mr-2"></i> لوحة التحكم
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="max-w-6xl mx-auto p-6 mt-8">
+        <!-- MOBILE VIEW -->
+        <div x-show="view === 'mobile'" x-transition>
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold mb-2">معاينة تطبيق الجوال</h2>
+                <p class="text-gray-500">تصميم نظيف، معلومات مباشرة، وتجربة مستخدم سريعة للوصول للمناوب اليوم.</p>
+            </div>
+
+            <div class="mobile-mockup flex flex-col">
+                <!-- Status Bar -->
+                <div class="h-7 w-full flex justify-between items-center px-6 pt-2">
+                    <span class="text-xs font-medium font-sans">9:41</span>
+                    <div class="flex gap-1 text-xs"><i class="fa-solid fa-wifi"></i> <i class="fa-solid fa-battery-full"></i></div>
+                </div>
+
+                <!-- App Header -->
+                <div class="px-5 pt-8 pb-4 flex justify-between items-center">
+                    <h1 class="text-2xl font-bold text-gray-900">المناوب اليوم</h1>
+                    <div class="relative">
+                        <select x-model="selectedCity" class="appearance-none bg-white border border-gray-200 text-gray-700 py-2 pl-3 pr-10 rounded-full outline-none font-medium focus:ring-2 focus:ring-blue-500">
+                            <template x-for="city in cities" :key="city.id">
+                                <option :value="city.id" x-text="city.name"></option>
+                            </template>
+                        </select>
+                        <i class="fa-solid fa-chevron-down absolute left-3 top-3 text-gray-400 pointer-events-none text-sm"></i>
+                    </div>
+                </div>
+
+                <!-- Content -->
+                <div class="flex-1 px-5 pb-6">
+                    <template x-for="schedule in getTodaySchedules()" :key="schedule.id">
+                        <div class="bg-white rounded-2xl p-5 mb-4 shadow-sm border border-gray-100">
+                            <div class="flex items-center gap-3 mb-4">
+                                <div class="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600">
+                                    <i class="fa-solid fa-house-medical"></i>
+                                </div>
+                                <h2 class="text-xl font-bold text-gray-900" x-text="schedule.facility.name"></h2>
+                            </div>
+
+                            <div class="space-y-3 mb-6">
+                                <div class="flex items-center gap-3 text-gray-600">
+                                    <i class="fa-solid fa-location-dot text-gray-400"></i>
+                                    <span class="text-sm" x-text="schedule.facility.address"></span>
+                                </div>
+                                <div class="flex items-center gap-3 text-gray-600">
+                                    <i class="fa-solid fa-phone text-gray-400"></i>
+                                    <span class="text-sm font-sans" dir="ltr" x-text="schedule.facility.phone"></span>
+                                </div>
+                            </div>
+
+                            <div class="flex gap-3">
+                                <a :href="'tel:' + schedule.facility.phone" class="flex-1 flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-medium transition-colors">
+                                    <i class="fa-solid fa-phone"></i> اتصال
+                                </a>
+                                <button @click="alert('في التطبيق الحقيقي، سيتم فتح الموقع على الخرائط (Google Maps)')" class="flex-1 flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white py-3 rounded-xl font-medium transition-colors">
+                                    <i class="fa-solid fa-map-location-dot"></i> الموقع
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <div x-show="getTodaySchedules().length === 0" class="h-full flex flex-col items-center justify-center text-gray-500 mt-20">
+                        <i class="fa-solid fa-circle-check text-4xl text-gray-300 mb-4"></i>
+                        <p class="text-lg">لا توجد صيدليات مناوبة اليوم</p>
+                    </div>
+
+                    <!-- Upcoming Schedules Preview -->
+                    <div class="mt-8">
+                        <h3 class="text-lg font-bold text-gray-900 mb-4">مناوبة الغد</h3>
+                        <template x-for="schedule in getTomorrowSchedules()" :key="schedule.id">
+                            <div class="bg-white rounded-xl p-4 mb-3 shadow-sm border border-gray-100 flex justify-between items-center">
+                                <div>
+                                    <h4 class="font-bold text-gray-800" x-text="schedule.facility.name"></h4>
+                                    <p class="text-xs text-gray-500 mt-1" x-text="schedule.facility.address"></p>
+                                </div>
+                                <div class="text-blue-600 bg-blue-50 w-8 h-8 rounded-full flex items-center justify-center">
+                                    <i class="fa-solid fa-chevron-left text-sm"></i>
+                                </div>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+
+                <!-- Home Indicator -->
+                <div class="w-full flex justify-center pb-2 pt-2 bg-white sticky bottom-0">
+                    <div class="w-32 h-1 bg-black rounded-full opacity-20"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ADMIN VIEW -->
+        <div x-show="view === 'admin'" x-transition style="display: none;">
+            <div class="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200 flex" style="min-height: 700px;">
+                <!-- Sidebar -->
+                <div class="w-64 bg-gray-900 text-white flex flex-col">
+                    <div class="p-6 font-bold text-xl border-b border-gray-800">
+                        Duty Admin
+                    </div>
+                    <nav class="flex-1 p-4 space-y-2">
+                        <a href="#" class="flex items-center gap-3 p-3 rounded-lg bg-gray-800 transition-colors">
+                            <i class="fa-solid fa-chart-pie w-5"></i>
+                            <span>لوحة التحكم الرئيسية</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
+                            <i class="fa-solid fa-map-location-dot w-5"></i>
+                            <span>المدن</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
+                            <i class="fa-solid fa-hospital w-5"></i>
+                            <span>المنشآت والصيدليات</span>
+                        </a>
+                        <a href="#" class="flex items-center gap-3 p-3 rounded-lg hover:bg-gray-800 transition-colors">
+                            <i class="fa-solid fa-calendar-days w-5"></i>
+                            <span>جداول المناوبات</span>
+                        </a>
+                    </nav>
+                </div>
+
+                <!-- Main Content -->
+                <div class="flex-1 bg-gray-50 p-8">
+                    <h1 class="text-3xl font-bold mb-8 text-gray-800">نظرة عامة</h1>
+
+                    <!-- Stats -->
+                    <div class="grid grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+                            <h2 class="text-gray-500 text-sm font-medium">المدن النشطة</h2>
+                            <p class="text-3xl font-bold mt-2" x-text="cities.length"></p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+                            <h2 class="text-gray-500 text-sm font-medium">المنشآت المسجلة</h2>
+                            <p class="text-3xl font-bold mt-2" x-text="facilities.length"></p>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-purple-500">
+                            <h2 class="text-gray-500 text-sm font-medium">المناوبات المجدولة</h2>
+                            <p class="text-3xl font-bold mt-2" x-text="schedules.length"></p>
+                        </div>
+                    </div>
+
+                    <!-- Data Table -->
+                    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                        <div class="p-6 border-b border-gray-100 flex justify-between items-center">
+                            <h2 class="font-bold text-lg">أحدث جداول المناوبات المضافة</h2>
+                            <button class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm"><i class="fa-solid fa-plus ml-2"></i> إضافة مناوبة</button>
+                        </div>
+                        <table class="w-full text-right">
+                            <thead class="bg-gray-50 text-gray-500 border-b border-gray-100">
+                                <tr>
+                                    <th class="p-4 font-medium">التاريخ</th>
+                                    <th class="p-4 font-medium">المنشأة</th>
+                                    <th class="p-4 font-medium">المدينة</th>
+                                    <th class="p-4 font-medium">التصنيف</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <template x-for="schedule in schedules" :key="schedule.id">
+                                    <tr class="hover:bg-gray-50">
+                                        <td class="p-4">
+                                            <span class="bg-gray-100 px-3 py-1 rounded-full text-sm font-sans font-medium" x-text="schedule.date"></span>
+                                            <span x-show="schedule.date === getTodayStr()" class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs mr-2">اليوم</span>
+                                        </td>
+                                        <td class="p-4 font-bold" x-text="schedule.facility.name"></td>
+                                        <td class="p-4" x-text="getCityName(schedule.facility.cityId)"></td>
+                                        <td class="p-4 text-gray-500">صيدلية</td>
+                                    </tr>
+                                </template>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        function appData() {
+            // Helpers
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+
+            const formatDate = (date) => date.toISOString().split('T')[0];
+
+            return {
+                view: 'mobile',
+                selectedCity: 'city_1',
+
+                getTodayStr() { return formatDate(today); },
+
+                // MOCK DATA
+                cities: [
+                    { id: 'city_1', name: 'إدلب' },
+                    { id: 'city_2', name: 'أريحا' }
+                ],
+
+                facilities: [
+                    { id: 'fac_1', name: 'صيدلية الشفاء', cityId: 'city_1', address: 'دوار الكرة، إدلب', phone: '0933111111' },
+                    { id: 'fac_2', name: 'صيدلية ابن سينا', cityId: 'city_1', address: 'ساحة الساعة، إدلب', phone: '0944222222' },
+                    { id: 'fac_3', name: 'صيدلية النور', cityId: 'city_2', address: 'السوق الرئيسي، أريحا', phone: '0955333333' },
+                    { id: 'fac_4', name: 'صيدلية الأمل', cityId: 'city_2', address: 'طريق حلب، أريحا', phone: '0966444444' }
+                ],
+
+                schedules: [
+                    // Idlib
+                    { id: 'sch_1', date: formatDate(today), facilityId: 'fac_1' },
+                    { id: 'sch_2', date: formatDate(tomorrow), facilityId: 'fac_2' },
+                    // Ariha
+                    { id: 'sch_3', date: formatDate(today), facilityId: 'fac_3' },
+                    { id: 'sch_4', date: formatDate(tomorrow), facilityId: 'fac_4' }
+                ],
+
+                init() {
+                    // Populate facility objects in schedules for easy rendering
+                    this.schedules = this.schedules.map(sch => ({
+                        ...sch,
+                        facility: this.facilities.find(f => f.id === sch.facilityId)
+                    }));
+                },
+
+                getCityName(id) {
+                    return this.cities.find(c => c.id === id)?.name || '';
+                },
+
+                getTodaySchedules() {
+                    return this.schedules.filter(sch =>
+                        sch.date === formatDate(today) &&
+                        sch.facility.cityId === this.selectedCity
+                    );
+                },
+
+                getTomorrowSchedules() {
+                    return this.schedules.filter(sch =>
+                        sch.date === formatDate(tomorrow) &&
+                        sch.facility.cityId === this.selectedCity
+                    );
+                }
+            }
+        }
+    </script>
+</body>
+</html>
