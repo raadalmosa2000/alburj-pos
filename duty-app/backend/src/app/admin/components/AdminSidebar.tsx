@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Users, Calendar, MapPin, Grid, Building } from "lucide-react";
+import { Users, Calendar, MapPin, Grid, Building, Smartphone } from "lucide-react";
 
 export default function AdminSidebar() {
   return (
@@ -29,6 +29,13 @@ export default function AdminSidebar() {
           <span>Schedules</span>
         </Link>
       </nav>
+
+      <div className="p-4 border-t border-gray-800">
+        <Link href="/preview/mobile" target="_blank" className="flex items-center justify-center gap-2 p-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors font-medium text-sm">
+          <Smartphone size={18} />
+          Mobile App Preview
+        </Link>
+      </div>
     </aside>
   );
 }
