@@ -1,0 +1,56 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model City {
+  id         String     @id @default(cuid())
+  name       String
+  facilities Facility[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Category {
+  id         String     @id @default(cuid())
+  name       String     // e.g. "Pharmacy", "Clinic"
+  slug       String     @unique
+  facilities Facility[]
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+}
+
+model Facility {
+  id          String         @id @default(cuid())
+  name        String
+  ownerName   String?
+  phone       String?
+  latitude    Float?
+  longitude   Float?
+  address     String?
+  imageUrl    String?
+  contactInfo String?
+  isActive    Boolean        @default(true)
+  cityId      String
+  categoryId  String
+  city        City           @relation(fields: [cityId], references: [id])
+  category    Category       @relation(fields: [categoryId], references: [id])
+  schedules   DutySchedule[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model DutySchedule {
+  id         String   @id @default(cuid())
+  date       DateTime // The date of the duty
+  facilityId String
+  facility   Facility @relation(fields: [facilityId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([date, facilityId]) // A facility can only have one schedule entry per day
+}
